@@ -9,21 +9,24 @@ export default function Relatorios() {
       {/* Header */}
       <Header usuario="Andreas" data="Segunda, 08 de Setembro." pagina="Relatórios e Insights" />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Cards de métricas */}
-        <View style={styles.metricsRow}>
-          <View style={styles.metricCard}>
-            <Ionicons name="cash-outline" size={24} color="#fff" />
-            <Text style={styles.metricLabel}>Vendas Hoje</Text>
-            <Text style={styles.metricValue}>R$ 285,60</Text>
-          </View>
-
-          <View style={styles.metricCard}>
-            <Ionicons name="cube-outline" size={24} color="#fff" />
-            <Text style={styles.metricLabel}>Produtos</Text>
-            <Text style={styles.metricValue}>4</Text>
-          </View>
+    <ScrollView 
+      style={[styles.scroll, { marginTop: 150 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Cards de métricas */}
+      <View style={styles.metricsRow}>
+        <View style={styles.metricCard}>
+          <Ionicons name="cash-outline" size={24} color="#fff" />
+          <Text style={styles.metricLabel}>Vendas Hoje</Text>
+          <Text style={styles.metricValue}>R$ 285,60</Text>
         </View>
+
+        <View style={styles.metricCard}>
+          <Ionicons name="cube-outline" size={24} color="#fff" />
+          <Text style={styles.metricLabel}>Produtos</Text>
+          <Text style={styles.metricValue}>4</Text>
+        </View>
+      </View>
 
         {/* Vendas da semana */}
         <Text style={styles.sectionTitle}>Vendas da semana</Text>
