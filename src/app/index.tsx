@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 140,
-    height: 140,
+    width: 400,
+    height: 400,
   },
   card: {
     backgroundColor: "#FFF",

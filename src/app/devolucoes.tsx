@@ -6,13 +6,12 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
-
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
-import { Ionicons } from "@expo/vector-icons"; // biblioteca de ícones
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Devolucoes() {
   const [produto, setProduto] = useState("");
@@ -66,7 +65,7 @@ export default function Devolucoes() {
   }
 
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       {/* Header fixo */}
       <Header
         usuario="Andreas"
@@ -155,7 +154,7 @@ export default function Devolucoes() {
 
       {/* Barra inferior */}
       <BottomNav />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -167,7 +166,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    paddingTop: 160,
+    // ❌ não precisa mais do paddingTop fixo
   },
   tituloLinha: {
     flexDirection: "row",
@@ -195,15 +194,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 10,
-    color: "#34495E", // cor ajustada
+    color: "#34495E",
   },
   input: {
     borderWidth: 1,
-    borderColor: "rgba(146, 138, 138, 0.5)", // borda com 50% de opacidade
+    borderColor: "rgba(146, 138, 138, 0.5)",
     borderRadius: 8,
     padding: 10,
     marginTop: 5,
-    color: "#434343", // texto dentro do input
+    color: "#434343",
   },
   botaoFoto: {
     borderWidth: 1,
@@ -218,7 +217,7 @@ const styles = StyleSheet.create({
   textoFoto: {
     marginLeft: 6,
     color: "#34495E",
-    fontWeight: "600"
+    fontWeight: "600",
   },
   botao: {
     backgroundColor: "#E53935",
@@ -226,7 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 16,
-    borderWidth: 0.5, // borda branca no botão vermelho
+    borderWidth: 0.5,
     borderColor: "#FFF",
   },
   botaoTexto: {

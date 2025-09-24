@@ -7,7 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons"; // ícones
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
@@ -55,76 +56,94 @@ export default function Estoque() {
     .filter((p) => p.titulo.toLowerCase().includes(busca.toLowerCase()));
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
       <Header
         usuario="Andreas"
         data="Segunda, 08 de Setembro."
         pagina="Estoque"
       />
 
-      {/* Busca */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Buscar"
-          placeholderTextColor="#666"
-          value={busca}
-          onChangeText={setBusca}
-        />
-      </View>
-
-      {/* Título Filtros */}
-      <View style={styles.filtrosTitulo}>
-        <Feather name="filter" size={16} color="#1E2A38" />
-        <Text style={styles.filtrosTexto}>Filtros</Text>
-      </View>
-
-      {/* Botões de Filtro */}
-      <View style={styles.filtros}>
-        {filtros.map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filtroButton, filtro === f && styles.filtroAtivo]}
-            onPress={() => setFiltro(f)}
-          >
-            <Text
-              style={[
-                styles.filtroTexto,
-                filtro === f && { color: "#34495E"},
-              ]}
-            >
-              {f} ({contagemFiltros[f]})
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Lista de produtos */}
-      <ScrollView contentContainerStyle={styles.produtos}>
-        {produtosFiltrados.map((p) => (
-          <CardRevista
-            key={p.id}
-            imagem={p.imagem}
-            titulo={p.titulo}
-            preco={p.preco}
-            vendas={p.vendas}
-            estoque={p.estoque}
+      {/* Conteúdo */}
+      <View style={styles.container}>
+        {/* Busca */}
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#666"
+            style={styles.searchIcon}
           />
-        ))}
-      </ScrollView>
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar"
+            placeholderTextColor="#666"
+            value={busca}
+            onChangeText={setBusca}
+          />
+        </View>
 
-      <BottomNav />
-    </View>
+        {/* Título Filtros */}
+        <View style={styles.filtrosTitulo}>
+          <Feather name="filter" size={16} color="#1E2A38" />
+          <Text style={styles.filtrosTexto}>Filtros</Text>
+        </View>
+
+        {/* Botões de Filtro */}
+        <View style={styles.filtros}>
+          {filtros.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.filtroButton, filtro === f && styles.filtroAtivo]}
+              onPress={() => setFiltro(f)}
+            >
+              <Text
+                style={[
+                  styles.filtroTexto,
+                  filtro === f && { color: "#34495E" },
+                ]}
+              >
+                {f} ({contagemFiltros[f]})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Lista de produtos */}
+        <ScrollView
+          contentContainerStyle={styles.produtos}
+          showsVerticalScrollIndicator={false}
+        >
+          {produtosFiltrados.map((p) => (
+            <CardRevista
+              key={p.id}
+              imagem={p.imagem}
+              titulo={p.titulo}
+              preco={p.preco}
+              vendas={p.vendas}
+              estoque={p.estoque}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Barra fixa no rodapé */}
+      <View style={styles.bottomNavContainer}>
+        <BottomNav />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f8f8f8", // fundo padrão
+  },
   container: {
     flex: 1,
-    paddingTop: 160,
+    paddingTop: 20,
     paddingHorizontal: 16,
-    backgroundColor: "#f8f8f8",
   },
   searchContainer: {
     flexDirection: "row",
@@ -168,7 +187,6 @@ const styles = StyleSheet.create({
   filtroAtivo: {
     backgroundColor: "rgba(230, 126, 34, 0.5)",
   },
-
   filtroTexto: {
     color: "#34495E",
   },
@@ -176,7 +194,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingBottom: 100,
+    paddingBottom: 120,
+  },
+  bottomNavContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });
+
 

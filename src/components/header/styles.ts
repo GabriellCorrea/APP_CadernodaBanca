@@ -1,67 +1,71 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  // Container principal do header
-  headerContainer: {
-    backgroundColor: "white",
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+  safeArea: {
+    backgroundColor: "#fff",
   },
 
-  // Seção de cima: Foto, Saudação e Bandeira
-  topSection: {
+  header: {
+    backgroundColor: "white",
+    height: 20,
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
-    height: 60,
-    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
   },
-  image: {
+
+  image_caderno: {
+    marginBottom: 20,
+    width: 40,
+    height: 140,
+  },
+
+  image_flag: {
+    marginBottom: 20,
     width: 40,
     height: 40,
     resizeMode: "contain",
   },
+
   saudacao: {
     color: "#4E5356",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "600",
     flex: 1,
     marginLeft: 10,
-  },
-  flag: {
-    width: 30,
-    height: 20,
-    resizeMode: "contain",
+    marginTop: -10
   },
 
-  // --- ALTERAÇÕES AQUI ---
-  // Seção do meio: Data
-  dateSection: {
+  container2: {
     backgroundColor: "#555",
     height: 40,
-    paddingHorizontal: 20,
-    flexDirection: "row",     // Adicionado
-    alignItems: "center",      // Adicionado
-    // justifyContent: "center" // Removido
+    alignItems: "center",
+    flexDirection: "row",
+    paddingLeft: 20,
+    elevation: 6,
   },
+
   data: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
-    marginLeft: 8,            // Adicionado
   },
-  // --- FIM DAS ALTERAÇÕES ---
 
-  // Seção de baixo: Página
-  pageSection: {
+  container3: {
     backgroundColor: "#D9D9D9",
     height: 40,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    alignItems: "flex-start",
+    paddingLeft: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 6,
   },
+
   pagina: {
     color: "#34495E",
     fontSize: 19,

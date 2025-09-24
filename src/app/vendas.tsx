@@ -1,12 +1,17 @@
 import { View, StyleSheet, Pressable, Text } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
 
 export default function Vendas() {
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       {/* Header */}
-      <Header usuario="Andreas" data="Segunda, 08 de Setembro." pagina="Vendas" />
+      <Header
+          usuario="Andreas"
+          data="Quarta, 24 de Setembro."
+          pagina="Início"
+      />
 
       {/* Card central */}
       <View style={styles.container}>
@@ -37,7 +42,7 @@ export default function Vendas() {
 
       {/* Bottom nav */}
       <BottomNav />
-    </View>
+    </SafeAreaView>
   )
 }
 
@@ -50,19 +55,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 16,
-    paddingTop: 100, // espaço pro header
   },
   card: {
     backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 20,
     alignItems: "center",
-    minHeight: 450, // mais alto
+    minHeight: 450,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
-    elevation: 6, // sombra no Android
+    elevation: 6,
   },
   fotoBox: {
     width: "80%",
@@ -85,7 +89,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   botaoPressionado: {
-    backgroundColor: "#1A2E40", // azul escuro
+    backgroundColor: "#1A2E40",
   },
   botaoTexto: {
     color: "#34495E",

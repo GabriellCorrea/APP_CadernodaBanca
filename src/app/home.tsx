@@ -3,7 +3,7 @@ import { Header } from "@/components/header";
 import { MaisVendidos } from "@/components/MaisVendidos/MaisVendidos";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import React from 'react';
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
@@ -15,13 +15,14 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.container}>
-      
+      {/* Header */}
       <Header
         usuario="Andreas"
         data="Quarta, 24 de Setembro."
         pagina="Início"
       />
-      
+
+      {/* Conteúdo rolável */}
       <ScrollView
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollContentContainer}
@@ -34,11 +35,13 @@ export default function Home() {
         <MaisVendidos />
       </ScrollView>
 
-      <BottomNav />
+      {/* Barra de navegação fixa no rodapé */}
+      <View style={styles.bottomNavContainer}>
+        <BottomNav />
+      </View>
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -50,6 +53,12 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 80,
+  },
+  bottomNavContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

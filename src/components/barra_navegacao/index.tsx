@@ -2,6 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useRouter, usePathname } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "./styles";
 
 export function BottomNav() {
@@ -16,7 +17,9 @@ export function BottomNav() {
     { name: "Relatórios", route: "/relatorios", icon: "chart-bar" },
   ];
 
-  return (
+return (
+  <>
+    {/* Barra fixa no fundo */}
     <View style={styles.container}>
       {tabs.map((tab, index) => {
         const isActive = pathname === tab.route;
@@ -26,18 +29,20 @@ export function BottomNav() {
             style={styles.button}
             onPress={() => router.push(tab.route as any)}
           >
-            <View style={[styles.innerButton, isActive && styles.activeButton]}>
+            <View
+              style={[styles.innerButton, isActive && styles.activeButton]}
+            >
               <Icon
                 name={tab.icon}
                 size={24}
-                color={isActive ? styles.iconActive.color : styles.iconInactive.color}
+                color={
+                  isActive
+                    ? styles.iconActive.color
+                    : styles.iconInactive.color
+                }
               />
               {isActive && (
-                <Text
-                  style={styles.activeText}
-                  numberOfLines={1}
-                  ellipsizeMode="clip"
-                >
+                <Text style={styles.activeText} numberOfLines={1}>
                   {tab.name}
                 </Text>
               )}
@@ -46,7 +51,11 @@ export function BottomNav() {
         );
       })}
     </View>
-  );
+
+    {/* SafeArea atrás da barra */}
+    <SafeAreaView edges={["bottom"]} style={styles.safeArea} />
+  </>
+);
 }
 
 

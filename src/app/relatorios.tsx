@@ -1,32 +1,40 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
 import { Ionicons } from "@expo/vector-icons"
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Relatorios() {
   return (
-    <View style={styles.wrapper}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Header usuario="Andreas" data="Segunda, 08 de Setembro." pagina="Relatórios e Insights" />
+      <Header 
+        usuario="Andreas" 
+        data="Quarta, 24 de Setembro." 
+        pagina="Relatórios e Insights" 
+      />
 
-    <ScrollView 
-      style={[styles.scroll, { marginTop: 150 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Cards de métricas */}
-      <View style={styles.metricsRow}>
-        <View style={styles.metricCard}>
-          <Ionicons name="cash-outline" size={24} color="#fff" />
-          <Text style={styles.metricLabel}>Vendas Hoje</Text>
-          <Text style={styles.metricValue}>R$ 285,60</Text>
-        </View>
+      {/* Conteúdo rolável */}
+      <ScrollView
+        style={styles.scrollViewContainer}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Cards de métricas */}
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCard}>
+            <Ionicons name="cash-outline" size={24} color="#fff" />
+            <Text style={styles.metricLabel}>Vendas Hoje</Text>
+            <Text style={styles.metricValue}>R$ 285,60</Text>
+          </View>
 
-        <View style={styles.metricCard}>
-          <Ionicons name="cube-outline" size={24} color="#fff" />
-          <Text style={styles.metricLabel}>Produtos</Text>
-          <Text style={styles.metricValue}>4</Text>
+          <View style={styles.metricCard}>
+            <Ionicons name="cube-outline" size={24} color="#fff" />
+            <Text style={styles.metricLabel}>Produtos</Text>
+            <Text style={styles.metricValue}>4</Text>
+          </View>
         </View>
-      </View>
 
         {/* Vendas da semana */}
         <Text style={styles.sectionTitle}>Vendas da semana</Text>
@@ -61,20 +69,35 @@ export default function Relatorios() {
         ))}
       </ScrollView>
 
-      {/* Bottom nav */}
-      <BottomNav />
-    </View>
+      {/* Barra de navegação fixa no rodapé */}
+      <View style={styles.bottomNavContainer}>
+        <BottomNav />
+      </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  // ESTILOS DE LAYOUT ADAPTADOS (IGUAIS AOS DA HOME)
+  container: {
     flex: 1,
     backgroundColor: "#F8F8F8",
   },
-  scroll: {
-    padding: 16,
+  scrollViewContainer: {
+    flex: 1,
   },
+  scrollContentContainer: {
+    padding: 16,
+    paddingBottom: 90, // Espaço extra para não sobrepor o BottomNav
+  },
+  bottomNavContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+
+  // SEUS ESTILOS ORIGINAIS (NÃO FORAM ALTERADOS)
   metricsRow: {
     flexDirection: "row",
     justifyContent: "space-between",

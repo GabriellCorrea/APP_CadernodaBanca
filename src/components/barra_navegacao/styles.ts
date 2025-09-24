@@ -1,7 +1,13 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: "#4E5356",
+  },
   container: {
+    bottom: -1,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     backgroundColor: "#4E5356",
     justifyContent: "space-evenly",
@@ -12,21 +18,20 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     paddingHorizontal: 8,
   },
+
   button: {
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
   },
+
   innerButton: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   activeButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -37,6 +42,7 @@ export const styles = StyleSheet.create({
     minWidth: 110,
     justifyContent: "center",
   },
+
   activeText: {
     marginLeft: 8,
     color: "#E67E22",
@@ -44,11 +50,14 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     flexShrink: 1,
   },
+
   iconActive: {
     color: "#E67E22",
   },
+
   iconInactive: {
     color: "#E67E22",
   },
 });
+
 
