@@ -1,28 +1,29 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  header: {
+  // Container principal do header
+  headerContainer: {
     backgroundColor: "white",
-    height: 60,
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    zIndex: 1000,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#FFFFFF",
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
 
+  // Seção de cima: Foto, Saudação e Bandeira
+  topSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    height: 60,
+    backgroundColor: "white",
+  },
   image: {
     width: 40,
     height: 40,
     resizeMode: "contain",
   },
-
   saudacao: {
     color: "#4E5356",
     fontSize: 22,
@@ -30,61 +31,40 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
   },
-
   flag: {
     width: 30,
     height: 20,
     resizeMode: "contain",
   },
 
-  container2: {
+  // --- ALTERAÇÕES AQUI ---
+  // Seção do meio: Data
+  dateSection: {
     backgroundColor: "#555",
     height: 40,
-    alignItems: "center",
-    position: "absolute",
-    top: 60,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    paddingLeft: 20,
-    zIndex: 1000,
-    elevation: 10,
+    paddingHorizontal: 20,
+    flexDirection: "row",     // Adicionado
+    alignItems: "center",      // Adicionado
+    // justifyContent: "center" // Removido
   },
-
   data: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+    marginLeft: 8,            // Adicionado
   },
+  // --- FIM DAS ALTERAÇÕES ---
 
-  container3: {
+  // Seção de baixo: Página
+  pageSection: {
     backgroundColor: "#D9D9D9",
     height: 40,
     justifyContent: "center",
-    alignItems: "flex-start",
-    position: "absolute",
-    top: 100,
-    left: 0,
-    right: 0,
-    paddingLeft: 20,
-
-    // Sombra iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-
-    // Sombra Android
-    elevation: 10,
-
-    zIndex: 1000,
+    paddingHorizontal: 20,
   },
-
-
   pagina: {
     color: "#34495E",
     fontSize: 19,
     fontWeight: "700",
   },
 });
-

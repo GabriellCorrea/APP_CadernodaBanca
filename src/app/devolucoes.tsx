@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 16,
-    borderWidth: 1, // borda branca no botão vermelho
+    borderWidth: 0.5, // borda branca no botão vermelho
     borderColor: "#FFF",
   },
   botaoTexto: {

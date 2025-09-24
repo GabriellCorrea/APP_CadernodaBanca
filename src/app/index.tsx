@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image } from "react-native"
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 
 import { router } from "expo-router"
 
@@ -17,7 +17,7 @@ export default function Login() {
       {/* Logo */}
       <View style={styles.logoContainer}>
         <Image
-          source={require("../../assets/images/FLUMINENSE.png")} // substitir pela logo certa
+          source={require("../../assets/images/CADERNO-Photoroom.png")} // substitir pela logo certa
           style={styles.logo}
           resizeMode="contain"
         />
