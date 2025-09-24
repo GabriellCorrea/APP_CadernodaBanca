@@ -15,6 +15,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.container}>
+      
       <Header
         usuario="Andreas"
         data="Quarta, 24 de Setembro."
