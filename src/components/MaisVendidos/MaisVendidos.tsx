@@ -1,22 +1,26 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons'; // 1. Importa a família de ícones Feather
 
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import axios from 'axios';
+import Constants from 'expo-constants';
 import { styles } from './styles';
 
+
+// Tipo para produto retornado da API
 type Produto = {
   id: string;
   title: string;
   price: string;
   sales: string;
-  image: ImageSourcePropType; 
+  image: string; // URL da imagem
 };
 
+
+// Card de produto individual
 const CardProduto: React.FC<{ item: Produto }> = ({ item }) => (
   <View style={styles.cardContainer}>
-    {/* Se a API retornar uma URL, você usaria: source={{ uri: item.image }} */}
-    <Image source={item.image} style={styles.cardImage} /> 
+    <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
     <View style={styles.cardTextContainer}>
       <Text style={styles.cardTitle}>{item.title}</Text>
       <Text style={styles.cardPrice}>{item.price}</Text>
@@ -25,28 +29,35 @@ const CardProduto: React.FC<{ item: Produto }> = ({ item }) => (
   </View>
 );
 
+
 export const MaisVendidos: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [loading, setLoading] = useState<boolean>(true); 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const apiUrl = "https://sua-api.com/mais-vendidos";
+    // Busca a URL da API do extra do app.config.js
+    const apiUrl = Constants.expoConfig?.extra?.API_URL || "";
+    if (!apiUrl) {
+      setError("API_URL não configurada.");
+      setLoading(false);
+      return;
+    }
 
     const buscarProdutos = async () => {
       try {
         const response = await axios.get<Produto[]>(apiUrl);
-        setProdutos(response.data); 
+        setProdutos(response.data);
       } catch (err) {
-        setError("Não foi possível carregar os produtos."); 
-        console.error(err); 
+        setError("Não foi possível carregar os produtos.");
+        console.error(err);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
 
     buscarProdutos();
-  }, []); 
+  }, []);
 
   if (loading) {
     return (
@@ -60,7 +71,7 @@ export const MaisVendidos: React.FC = () => {
   if (error) {
     return (
       <View style={localStyles.centered}>
-        <Text>{error}</Text>
+        <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>
       </View>
     );
   }
@@ -68,8 +79,7 @@ export const MaisVendidos: React.FC = () => {
   return (
     <View>
       <View style={styles.titleContainer}>
-        {/* 2. Adiciona o ícone aqui */}
-        <Feather name="trending-up" size={22} color="#333" />
+        <Feather name="trending-up" size={22} color="#333" style={{ marginRight: 8 }} />
         <Text style={styles.title}>Mais vendidos</Text>
       </View>
       <FlatList
@@ -79,16 +89,19 @@ export const MaisVendidos: React.FC = () => {
         numColumns={2}
         scrollEnabled={false}
         columnWrapperStyle={styles.row}
+        contentContainerStyle={{ paddingBottom: 16 }}
       />
     </View>
   );
-}
+};
 
+
+// Estilos locais para centralização
 const localStyles = StyleSheet.create({
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-  }
+  },
 });
