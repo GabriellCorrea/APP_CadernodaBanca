@@ -4,6 +4,7 @@ import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { styles } from "./styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { Notificacoes } from "../notificacoes";
 
 type HeaderProps = {
   usuario: string;
@@ -33,6 +34,9 @@ export function Header({ usuario, pagina }: HeaderProps) {
         {/* Saudação */}
         <Text style={styles.saudacao}>Olá, {usuario}</Text>
 
+        {/* Notificações */}
+        <Notificacoes />
+        
         {/* Bandeira */}
         <Image
           source={require("../../../assets/images/Flag_of_Brazil.svg.png")}
