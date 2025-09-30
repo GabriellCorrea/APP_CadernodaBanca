@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
 import { apiService } from "@/services/api"
+import { router } from "expo-router"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export default function Vendas() {
   const [facing, setFacing] = useState<CameraType>("back") // câmera traseira por padrão
@@ -12,44 +14,94 @@ export default function Vendas() {
   const [produto, setProduto] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [scanned, setScanned] = useState(false)
+  const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
   const [permission, requestPermission] = useCameraPermissions()
+
+  // Verifica autenticação quando o componente iniciar
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Primeiro verifica se tem token salvo
+        const token = await AsyncStorage.getItem('authToken');
+        
+        if (!token) {
+          console.log('Usuário não autenticado - redirecionando para login');
+          Alert.alert(
+            "Acesso negado", 
+            "Você precisa fazer login para acessar o scanner de produtos",
+            [
+              {
+                text: "OK",
+                onPress: () => router.push("/")
+              }
+            ]
+          );
+          return;
+        }
+        
+        console.log('Token encontrado:', token ? `${token.substring(0, 20)}...` : 'Nenhum token');
+        
+        // Se tem token, testa a API
+        console.log('Testando conectividade da API...');
+        await apiService.testConnection();
+        console.log('API está acessível');
+        
+      } catch (error) {
+        console.error('Erro na verificação de auth/API:', error);
+        // Se deu erro na API mas tem token, continua (pode ser problema de rede)
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          router.push("/");
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [])
 
   // Função para buscar produto por código de barras
   const buscarProduto = async (codigo: string) => {
-    if (scanned || loading) return
+    // Evita scan do mesmo código ou múltiplos scans
+    if (scanned || loading || codigo === lastScannedCode) return
     
+    console.log('Código escaneado:', codigo)
     setScanned(true)
     setLoading(true)
+    setLastScannedCode(codigo)
     
     try {
-      console.log('Código escaneado:', codigo)
       const produtoData = await apiService.getProductByBarcode(codigo)
       setProduto(produtoData)
       setCodigoBarras(codigo)
-      
-      // Não mostra alert de sucesso, apenas atualiza a tela
       console.log('Produto encontrado:', produtoData)
-    } catch (error) {
+      
+      // Libera para novo scan após encontrar produto
+      setTimeout(() => {
+        setScanned(false)
+      }, 1000)
+      
+    } catch (error: any) {
       console.error('Erro ao buscar produto:', error)
       setProduto(null)
       setCodigoBarras(null)
       
-      // Mostra erro apenas uma vez
-      Alert.alert(
-        "Produto não encontrado", 
-        "Tente escanear outro código",
-        [
-          { 
-            text: "OK", 
-            onPress: () => {
-              // Reseta para permitir novo scan após 2 segundos
-              setTimeout(() => {
-                setScanned(false)
-              }, 2000)
-            }
-          }
-        ]
-      )
+      // Mostra erro específico baseado no status
+      let mensagemErro = "Produto não encontrado";
+      if (error.response?.status === 403) {
+        mensagemErro = "Erro de autenticação. Faça login novamente.";
+      } else if (error.response?.status === 404) {
+        mensagemErro = "Produto não cadastrado no sistema";
+      } else if (error.response?.status >= 500) {
+        mensagemErro = "Erro no servidor. Tente novamente.";
+      }
+      
+      console.log('Mensagem de erro:', mensagemErro);
+      
+      // Libera para novo scan após erro
+      setTimeout(() => {
+        setScanned(false)
+        setLastScannedCode(null)
+      }, 3000)
     } finally {
       setLoading(false)
     }
@@ -61,6 +113,7 @@ export default function Vendas() {
     setCodigoBarras(null)
     setScanned(false)
     setLoading(false)
+    setLastScannedCode(null)
   }
 
   // Função para confirmar venda
@@ -136,8 +189,20 @@ export default function Vendas() {
             }}
           />
           
+          {/* Status do scanner */}
+          {!produto && !loading && (
+            <View style={styles.statusInfo}>
+              <Text style={styles.statusTexto}>
+                {scanned ? "Aguardando..." : "Escaneie um código de barras"}
+              </Text>
+            </View>
+          )}
+
           {loading && (
-            <ActivityIndicator size="large" color="#E67E22" style={{ marginVertical: 10 }} />
+            <View style={styles.statusInfo}>
+              <ActivityIndicator size="large" color="#E67E22" />
+              <Text style={styles.statusTexto}>Buscando produto...</Text>
+            </View>
           )}
           
           {produto && (
@@ -310,5 +375,22 @@ const styles = StyleSheet.create({
   },
   botaoSecundarioTextoPressionado: {
     color: "#E67E22",
+  },
+  statusInfo: {
+    alignItems: "center",
+    marginVertical: 15,
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    width: "80%",
+    borderLeftWidth: 4,
+    borderLeftColor: "#E67E22",
+  },
+  statusTexto: {
+    fontSize: 14,
+    color: "#6c757d",
+    textAlign: "center",
+    marginTop: 8,
+    fontWeight: "500",
   },
 })

@@ -1,0 +1,726 @@
+﻿{
+    "openapi":  "3.1.0",
+    "info":  {
+                 "title":  "AndreaController API\u0027s Swagger",
+                 "version":  "0.1.0"
+             },
+    "paths":  {
+                  "/":  {
+                            "get":  {
+                                        "summary":  "Home",
+                                        "operationId":  "home__get",
+                                        "responses":  {
+                                                          "200":  {
+                                                                      "description":  "Successful Response",
+                                                                      "content":  {
+                                                                                      "application/json":  {
+                                                                                                               "schema":  {
+
+                                                                                                                          }
+                                                                                                           }
+                                                                                  }
+                                                                  }
+                                                      }
+                                    }
+                        },
+                  "/ping":  {
+                                "get":  {
+                                            "summary":  "Ping",
+                                            "operationId":  "ping_ping_get",
+                                            "responses":  {
+                                                              "200":  {
+                                                                          "description":  "Successful Response",
+                                                                          "content":  {
+                                                                                          "application/json":  {
+                                                                                                                   "schema":  {
+
+                                                                                                                              }
+                                                                                                               }
+                                                                                      }
+                                                                      }
+                                                          }
+                                        },
+                                "head":  {
+                                             "summary":  "Ping",
+                                             "operationId":  "ping_ping_head",
+                                             "responses":  {
+                                                               "200":  {
+                                                                           "description":  "Successful Response",
+                                                                           "content":  {
+                                                                                           "application/json":  {
+                                                                                                                    "schema":  {
+
+                                                                                                                               }
+                                                                                                                }
+                                                                                       }
+                                                                       }
+                                                           }
+                                         }
+                            },
+                  "/chamadas/cadastrar-chamada":  {
+                                                      "post":  {
+                                                                   "tags":  [
+                                                                                "Chamadas"
+                                                                            ],
+                                                                   "summary":  "Cadastrar Chamada",
+                                                                   "description":  "Recebe um ARQUIVO JSON, salva-o no storage, interpreta seu conteÃºdo\ne insere os dados da chamada e das revistas no banco.",
+                                                                   "operationId":  "cadastrar_chamada_chamadas_cadastrar_chamada_post",
+                                                                   "requestBody":  {
+                                                                                       "content":  {
+                                                                                                       "multipart/form-data":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref":  "#/components/schemas/Body_cadastrar_chamada_chamadas_cadastrar_chamada_post"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                   },
+                                                                                       "required":  true
+                                                                                   },
+                                                                   "responses":  {
+                                                                                     "201":  {
+                                                                                                 "description":  "Successful Response",
+                                                                                                 "content":  {
+                                                                                                                 "application/json":  {
+                                                                                                                                          "schema":  {
+
+                                                                                                                                                     }
+                                                                                                                                      }
+                                                                                                             }
+                                                                                             },
+                                                                                     "422":  {
+                                                                                                 "description":  "Validation Error",
+                                                                                                 "content":  {
+                                                                                                                 "application/json":  {
+                                                                                                                                          "schema":  {
+                                                                                                                                                         "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                                     }
+                                                                                                                                      }
+                                                                                                             }
+                                                                                             }
+                                                                                 },
+                                                                   "security":  [
+                                                                                    {
+                                                                                        "HTTPBearer":  [
+
+                                                                                                       ]
+                                                                                    }
+                                                                                ]
+                                                               }
+                                                  },
+                  "/chamadas/listar-chamadas-usuario":  {
+                                                            "get":  {
+                                                                        "tags":  [
+                                                                                     "Chamadas"
+                                                                                 ],
+                                                                        "summary":  "Listar Chamadas Por Usuario",
+                                                                        "description":  "Lista todas as chamadas de devoluÃ§Ã£o associadas ao usuÃ¡rio autenticado.",
+                                                                        "operationId":  "listar_chamadas_por_usuario_chamadas_listar_chamadas_usuario_get",
+                                                                        "responses":  {
+                                                                                          "200":  {
+                                                                                                      "description":  "Successful Response",
+                                                                                                      "content":  {
+                                                                                                                      "application/json":  {
+                                                                                                                                               "schema":  {
+                                                                                                                                                              "items":  {
+                                                                                                                                                                            "$ref":  "#/components/schemas/ChamadaDevolucaoResposta"
+                                                                                                                                                                        },
+                                                                                                                                                              "type":  "array",
+                                                                                                                                                              "title":  "Response Listar Chamadas Por Usuario Chamadas Listar Chamadas Usuario Get"
+                                                                                                                                                          }
+                                                                                                                                           }
+                                                                                                                  }
+                                                                                                  }
+                                                                                      },
+                                                                        "security":  [
+                                                                                         {
+                                                                                             "HTTPBearer":  [
+
+                                                                                                            ]
+                                                                                         }
+                                                                                     ]
+                                                                    }
+                                                        },
+                  "/revistas/tudo":  {
+                                         "get":  {
+                                                     "tags":  [
+                                                                  "Revistas"
+                                                              ],
+                                                     "summary":  "Pegar Tudo",
+                                                     "operationId":  "pegar_tudo_revistas_tudo_get",
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "Successful Response",
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               }
+                                                                   },
+                                                     "security":  [
+                                                                      {
+                                                                          "HTTPBearer":  [
+
+                                                                                         ]
+                                                                      }
+                                                                  ]
+                                                 }
+                                     },
+                  "/revistas/buscar/nome":  {
+                                                "get":  {
+                                                            "tags":  [
+                                                                         "Revistas"
+                                                                     ],
+                                                            "summary":  "Obter Revistas Por Nome Ou Apelido",
+                                                            "description":  "Endpoint para obter a(s) revista(s) buscada(s) pelo seu nome ou apelido, utilizando fuzzy search para definir a proximidade do parÃ¢metro de busca com o nome no banco de dados.",
+                                                            "operationId":  "obter_revistas_por_nome_ou_apelido_revistas_buscar_nome_get",
+                                                            "security":  [
+                                                                             {
+                                                                                 "HTTPBearer":  [
+
+                                                                                                ]
+                                                                             }
+                                                                         ],
+                                                            "parameters":  [
+                                                                               {
+                                                                                   "name":  "q",
+                                                                                   "in":  "query",
+                                                                                   "required":  true,
+                                                                                   "schema":  {
+                                                                                                  "type":  "string",
+                                                                                                  "title":  "Q"
+                                                                                              }
+                                                                               }
+                                                                           ],
+                                                            "responses":  {
+                                                                              "200":  {
+                                                                                          "description":  "Successful Response",
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      },
+                                                                              "422":  {
+                                                                                          "description":  "Validation Error",
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      }
+                                                                          }
+                                                        }
+                                            },
+                  "/revistas/buscar/codigo-barras":  {
+                                                         "get":  {
+                                                                     "tags":  [
+                                                                                  "Revistas"
+                                                                              ],
+                                                                     "summary":  "Obter Revista Por Codigo Barras",
+                                                                     "description":  "Endpoint para obter a revista buscada pelo seu cÃ³digo de barras.",
+                                                                     "operationId":  "obter_revista_por_codigo_barras_revistas_buscar_codigo_barras_get",
+                                                                     "security":  [
+                                                                                      {
+                                                                                          "HTTPBearer":  [
+
+                                                                                                         ]
+                                                                                      }
+                                                                                  ],
+                                                                     "parameters":  [
+                                                                                        {
+                                                                                            "name":  "q",
+                                                                                            "in":  "query",
+                                                                                            "required":  true,
+                                                                                            "schema":  {
+                                                                                                           "type":  "string",
+                                                                                                           "title":  "Q"
+                                                                                                       }
+                                                                                        }
+                                                                                    ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Successful Response",
+                                                                                                   "content":  {
+                                                                                                                   "application/json":  {
+                                                                                                                                            "schema":  {
+
+                                                                                                                                                       }
+                                                                                                                                        }
+                                                                                                               }
+                                                                                               },
+                                                                                       "422":  {
+                                                                                                   "description":  "Validation Error",
+                                                                                                   "content":  {
+                                                                                                                   "application/json":  {
+                                                                                                                                            "schema":  {
+                                                                                                                                                           "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                                       }
+                                                                                                                                        }
+                                                                                                               }
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                     },
+                  "/revistas/buscar/edicao":  {
+                                                  "get":  {
+                                                              "tags":  [
+                                                                           "Revistas"
+                                                                       ],
+                                                              "summary":  "Obter Revista Por Edicao",
+                                                              "description":  "Endpoint para obter a revista buscada pelo seu nÃºmero de ediÃ§Ã£o.",
+                                                              "operationId":  "obter_revista_por_edicao_revistas_buscar_edicao_get",
+                                                              "security":  [
+                                                                               {
+                                                                                   "HTTPBearer":  [
+
+                                                                                                  ]
+                                                                               }
+                                                                           ],
+                                                              "parameters":  [
+                                                                                 {
+                                                                                     "name":  "q",
+                                                                                     "in":  "query",
+                                                                                     "required":  true,
+                                                                                     "schema":  {
+                                                                                                    "type":  "string",
+                                                                                                    "title":  "Q"
+                                                                                                }
+                                                                                 }
+                                                                             ],
+                                                              "responses":  {
+                                                                                "200":  {
+                                                                                            "description":  "Successful Response",
+                                                                                            "content":  {
+                                                                                                            "application/json":  {
+                                                                                                                                     "schema":  {
+
+                                                                                                                                                }
+                                                                                                                                 }
+                                                                                                        }
+                                                                                        },
+                                                                                "422":  {
+                                                                                            "description":  "Validation Error",
+                                                                                            "content":  {
+                                                                                                            "application/json":  {
+                                                                                                                                     "schema":  {
+                                                                                                                                                    "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                                }
+                                                                                                                                 }
+                                                                                                        }
+                                                                                        }
+                                                                            }
+                                                          }
+                                              },
+                  "/vendas/tudo":  {
+                                       "get":  {
+                                                   "tags":  [
+                                                                "Vendas"
+                                                            ],
+                                                   "summary":  "Pegar Vendas",
+                                                   "operationId":  "pegar_vendas_vendas_tudo_get",
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Successful Response",
+                                                                                 "content":  {
+                                                                                                 "application/json":  {
+                                                                                                                          "schema":  {
+
+                                                                                                                                     }
+                                                                                                                      }
+                                                                                             }
+                                                                             }
+                                                                 },
+                                                   "security":  [
+                                                                    {
+                                                                        "HTTPBearer":  [
+
+                                                                                       ]
+                                                                    }
+                                                                ]
+                                               }
+                                   },
+                  "/vendas/recentes":  {
+                                           "get":  {
+                                                       "tags":  [
+                                                                    "Vendas"
+                                                                ],
+                                                       "summary":  "Pegar Relatorio Dia",
+                                                       "operationId":  "pegar_relatorio_dia_vendas_recentes_get",
+                                                       "responses":  {
+                                                                         "200":  {
+                                                                                     "description":  "Successful Response",
+                                                                                     "content":  {
+                                                                                                     "application/json":  {
+                                                                                                                              "schema":  {
+
+                                                                                                                                         }
+                                                                                                                          }
+                                                                                                 }
+                                                                                 }
+                                                                     },
+                                                       "security":  [
+                                                                        {
+                                                                            "HTTPBearer":  [
+
+                                                                                           ]
+                                                                        }
+                                                                    ]
+                                                   }
+                                       },
+                  "/vendas/hoje":  {
+                                       "get":  {
+                                                   "tags":  [
+                                                                "Vendas"
+                                                            ],
+                                                   "summary":  "Pegar Hoje",
+                                                   "operationId":  "pegar_hoje_vendas_hoje_get",
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Successful Response",
+                                                                                 "content":  {
+                                                                                                 "application/json":  {
+                                                                                                                          "schema":  {
+
+                                                                                                                                     }
+                                                                                                                      }
+                                                                                             }
+                                                                             }
+                                                                 },
+                                                   "security":  [
+                                                                    {
+                                                                        "HTTPBearer":  [
+
+                                                                                       ]
+                                                                    }
+                                                                ]
+                                               }
+                                   },
+                  "/vendas/cadastrar-venda-por-codigo":  {
+                                                             "post":  {
+                                                                          "tags":  [
+                                                                                       "Vendas"
+                                                                                   ],
+                                                                          "summary":  "Cadastrar Venda Codigo",
+                                                                          "description":  "Endpoint para persistir uma venda no banco do Supabase",
+                                                                          "operationId":  "cadastrar_venda_codigo_vendas_cadastrar_venda_por_codigo_post",
+                                                                          "requestBody":  {
+                                                                                              "content":  {
+                                                                                                              "application/json":  {
+                                                                                                                                       "schema":  {
+                                                                                                                                                      "$ref":  "#/components/schemas/VendaFormularioCodBarras"
+                                                                                                                                                  }
+                                                                                                                                   }
+                                                                                                          },
+                                                                                              "required":  true
+                                                                                          },
+                                                                          "responses":  {
+                                                                                            "200":  {
+                                                                                                        "description":  "Successful Response",
+                                                                                                        "content":  {
+                                                                                                                        "application/json":  {
+                                                                                                                                                 "schema":  {
+
+                                                                                                                                                            }
+                                                                                                                                             }
+                                                                                                                    }
+                                                                                                    },
+                                                                                            "422":  {
+                                                                                                        "description":  "Validation Error",
+                                                                                                        "content":  {
+                                                                                                                        "application/json":  {
+                                                                                                                                                 "schema":  {
+                                                                                                                                                                "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                                            }
+                                                                                                                                             }
+                                                                                                                    }
+                                                                                                    }
+                                                                                        },
+                                                                          "security":  [
+                                                                                           {
+                                                                                               "HTTPBearer":  [
+
+                                                                                                              ]
+                                                                                           }
+                                                                                       ]
+                                                                      }
+                                                         },
+                  "/vendas/cadastrar-venda-por-id":  {
+                                                         "post":  {
+                                                                      "tags":  [
+                                                                                   "Vendas"
+                                                                               ],
+                                                                      "summary":  "Cadastrar Venda Id",
+                                                                      "description":  "Endpoint para persistir uma venda no banco do Supabase",
+                                                                      "operationId":  "cadastrar_venda_id_vendas_cadastrar_venda_por_id_post",
+                                                                      "requestBody":  {
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref":  "#/components/schemas/VendaFormularioId"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      },
+                                                                                          "required":  true
+                                                                                      },
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Successful Response",
+                                                                                                    "content":  {
+                                                                                                                    "application/json":  {
+                                                                                                                                             "schema":  {
+
+                                                                                                                                                        }
+                                                                                                                                         }
+                                                                                                                }
+                                                                                                },
+                                                                                        "422":  {
+                                                                                                    "description":  "Validation Error",
+                                                                                                    "content":  {
+                                                                                                                    "application/json":  {
+                                                                                                                                             "schema":  {
+                                                                                                                                                            "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                                        }
+                                                                                                                                         }
+                                                                                                                }
+                                                                                                }
+                                                                                    },
+                                                                      "security":  [
+                                                                                       {
+                                                                                           "HTTPBearer":  [
+
+                                                                                                          ]
+                                                                                       }
+                                                                                   ]
+                                                                  }
+                                                     },
+                  "/vendas/relatorio-semana":  {
+                                                   "get":  {
+                                                               "tags":  [
+                                                                            "Vendas"
+                                                                        ],
+                                                               "summary":  "Pegar Relatorio Semana",
+                                                               "operationId":  "pegar_relatorio_semana_vendas_relatorio_semana_get",
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Successful Response",
+                                                                                             "content":  {
+                                                                                                             "application/json":  {
+                                                                                                                                      "schema":  {
+
+                                                                                                                                                 }
+                                                                                                                                  }
+                                                                                                         }
+                                                                                         }
+                                                                             },
+                                                               "security":  [
+                                                                                {
+                                                                                    "HTTPBearer":  [
+
+                                                                                                   ]
+                                                                                }
+                                                                            ]
+                                                           }
+                                               }
+              },
+    "components":  {
+                       "schemas":  {
+                                       "Body_cadastrar_chamada_chamadas_cadastrar_chamada_post":  {
+                                                                                                      "properties":  {
+                                                                                                                         "file":  {
+                                                                                                                                      "type":  "string",
+                                                                                                                                      "format":  "binary",
+                                                                                                                                      "title":  "File"
+                                                                                                                                  }
+                                                                                                                     },
+                                                                                                      "type":  "object",
+                                                                                                      "required":  [
+                                                                                                                       "file"
+                                                                                                                   ],
+                                                                                                      "title":  "Body_cadastrar_chamada_chamadas_cadastrar_chamada_post"
+                                                                                                  },
+                                       "ChamadaDevolucaoResposta":  {
+                                                                        "properties":  {
+                                                                                           "id":  {
+                                                                                                      "type":  "integer",
+                                                                                                      "title":  "Id"
+                                                                                                  },
+                                                                                           "id_usuario":  {
+                                                                                                              "type":  "integer",
+                                                                                                              "title":  "Id Usuario"
+                                                                                                          },
+                                                                                           "ponto_venda_id":  {
+                                                                                                                  "type":  "integer",
+                                                                                                                  "title":  "Ponto Venda Id"
+                                                                                                              },
+                                                                                           "data_limite":  {
+                                                                                                               "type":  "string",
+                                                                                                               "format":  "date-time",
+                                                                                                               "title":  "Data Limite"
+                                                                                                           },
+                                                                                           "url_documento":  {
+                                                                                                                 "type":  "string",
+                                                                                                                 "title":  "Url Documento"
+                                                                                                             },
+                                                                                           "status":  {
+                                                                                                          "type":  "string",
+                                                                                                          "title":  "Status"
+                                                                                                      }
+                                                                                       },
+                                                                        "type":  "object",
+                                                                        "required":  [
+                                                                                         "id",
+                                                                                         "id_usuario",
+                                                                                         "ponto_venda_id",
+                                                                                         "data_limite",
+                                                                                         "url_documento",
+                                                                                         "status"
+                                                                                     ],
+                                                                        "title":  "ChamadaDevolucaoResposta"
+                                                                    },
+                                       "HTTPValidationError":  {
+                                                                   "properties":  {
+                                                                                      "detail":  {
+                                                                                                     "items":  {
+                                                                                                                   "$ref":  "#/components/schemas/ValidationError"
+                                                                                                               },
+                                                                                                     "type":  "array",
+                                                                                                     "title":  "Detail"
+                                                                                                 }
+                                                                                  },
+                                                                   "type":  "object",
+                                                                   "title":  "HTTPValidationError"
+                                                               },
+                                       "MetodoPagamentoEnum":  {
+                                                                   "type":  "string",
+                                                                   "enum":  [
+                                                                                "DÃ©bito",
+                                                                                "CrÃ©dito",
+                                                                                "Dinheiro",
+                                                                                "Pix"
+                                                                            ],
+                                                                   "title":  "MetodoPagamentoEnum"
+                                                               },
+                                       "ValidationError":  {
+                                                               "properties":  {
+                                                                                  "loc":  {
+                                                                                              "items":  {
+                                                                                                            "anyOf":  [
+                                                                                                                          {
+                                                                                                                              "type":  "string"
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                              "type":  "integer"
+                                                                                                                          }
+                                                                                                                      ]
+                                                                                                        },
+                                                                                              "type":  "array",
+                                                                                              "title":  "Location"
+                                                                                          },
+                                                                                  "msg":  {
+                                                                                              "type":  "string",
+                                                                                              "title":  "Message"
+                                                                                          },
+                                                                                  "type":  {
+                                                                                               "type":  "string",
+                                                                                               "title":  "Error Type"
+                                                                                           }
+                                                                              },
+                                                               "type":  "object",
+                                                               "required":  [
+                                                                                "loc",
+                                                                                "msg",
+                                                                                "type"
+                                                                            ],
+                                                               "title":  "ValidationError"
+                                                           },
+                                       "VendaFormularioCodBarras":  {
+                                                                        "properties":  {
+                                                                                           "metodo_pagamento":  {
+                                                                                                                    "$ref":  "#/components/schemas/MetodoPagamentoEnum"
+                                                                                                                },
+                                                                                           "codigo_barras":  {
+                                                                                                                 "type":  "string",
+                                                                                                                 "title":  "Codigo Barras"
+                                                                                                             },
+                                                                                           "qtd_vendida":  {
+                                                                                                               "type":  "integer",
+                                                                                                               "title":  "Qtd Vendida"
+                                                                                                           },
+                                                                                           "desconto_aplicado":  {
+                                                                                                                     "type":  "number",
+                                                                                                                     "title":  "Desconto Aplicado"
+                                                                                                                 },
+                                                                                           "valor_total":  {
+                                                                                                               "type":  "number",
+                                                                                                               "title":  "Valor Total"
+                                                                                                           },
+                                                                                           "data_venda":  {
+                                                                                                              "type":  "string",
+                                                                                                              "format":  "date-time",
+                                                                                                              "title":  "Data Venda"
+                                                                                                          }
+                                                                                       },
+                                                                        "type":  "object",
+                                                                        "required":  [
+                                                                                         "metodo_pagamento",
+                                                                                         "codigo_barras",
+                                                                                         "qtd_vendida",
+                                                                                         "desconto_aplicado",
+                                                                                         "valor_total",
+                                                                                         "data_venda"
+                                                                                     ],
+                                                                        "title":  "VendaFormularioCodBarras"
+                                                                    },
+                                       "VendaFormularioId":  {
+                                                                 "properties":  {
+                                                                                    "id_revista":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "title":  "Id Revista"
+                                                                                                   },
+                                                                                    "metodo_pagamento":  {
+                                                                                                             "$ref":  "#/components/schemas/MetodoPagamentoEnum"
+                                                                                                         },
+                                                                                    "qtd_vendida":  {
+                                                                                                        "type":  "integer",
+                                                                                                        "title":  "Qtd Vendida"
+                                                                                                    },
+                                                                                    "desconto_aplicado":  {
+                                                                                                              "type":  "number",
+                                                                                                              "title":  "Desconto Aplicado"
+                                                                                                          },
+                                                                                    "valor_total":  {
+                                                                                                        "type":  "number",
+                                                                                                        "title":  "Valor Total"
+                                                                                                    },
+                                                                                    "data_venda":  {
+                                                                                                       "type":  "string",
+                                                                                                       "format":  "date-time",
+                                                                                                       "title":  "Data Venda"
+                                                                                                   }
+                                                                                },
+                                                                 "type":  "object",
+                                                                 "required":  [
+                                                                                  "id_revista",
+                                                                                  "metodo_pagamento",
+                                                                                  "qtd_vendida",
+                                                                                  "desconto_aplicado",
+                                                                                  "valor_total",
+                                                                                  "data_venda"
+                                                                              ],
+                                                                 "title":  "VendaFormularioId"
+                                                             }
+                                   },
+                       "securitySchemes":  {
+                                               "HTTPBearer":  {
+                                                                  "type":  "http",
+                                                                  "scheme":  "bearer"
+                                                              }
+                                           }
+                   }
+}

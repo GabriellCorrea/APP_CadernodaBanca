@@ -1,8 +1,9 @@
 
 import { useState } from "react";
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
 import { Feather } from '@expo/vector-icons';
+import { apiService } from '@/services/api';
 
 
 
@@ -11,9 +12,39 @@ export default function Login() {
   const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleEntrar() {
-    router.push("/home");
+  async function handleEntrar() {
+    if (!login || !senha) {
+      Alert.alert("Erro", "Preencha todos os campos");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Tenta fazer login na API
+      const response = await apiService.login(login, senha);
+      console.log("Login response completo:", response);
+      
+      // Salva o token (tenta diferentes formatos comuns)
+      let token = response.token || response.access_token || response.data?.token || response.data?.access_token;
+      
+      if (token) {
+        (global as any).authToken = token;
+        console.log("Token salvo:", token);
+      } else {
+        console.warn("Token não encontrado na resposta:", response);
+        // Mesmo assim continua, talvez a API não precise de token para alguns endpoints
+      }
+      
+      // Se deu certo, vai para home
+      router.push("/home");
+    } catch (error) {
+      console.error("Erro no login:", error);
+      Alert.alert("Erro", "Email ou senha inválidos");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const { width } = Dimensions.get("window");
@@ -72,8 +103,14 @@ export default function Login() {
               <Text style={styles.link}>Esqueci minha senha</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.botao} onPress={handleEntrar}>
-            <Text style={styles.botaoTexto}>Entrar</Text>
+          <TouchableOpacity 
+            style={[styles.botao, loading && styles.botaoDisabled]} 
+            onPress={handleEntrar}
+            disabled={loading}
+          >
+            <Text style={styles.botaoTexto}>
+              {loading ? "Entrando..." : "Entrar"}
+            </Text>
           </TouchableOpacity>
           <View style={styles.signupRow}>
             <Text style={styles.signupText}>Não tem uma conta?</Text>
@@ -211,6 +248,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.5,
+  },
+  botaoDisabled: {
+    backgroundColor: "#ccc",
+    opacity: 0.7,
   },
   footer: {
     marginTop: 18,
