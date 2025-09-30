@@ -18,7 +18,6 @@ export default function Home() {
       {/* Header */}
       <Header
         usuario="Andreas"
-        data="Quarta, 24 de Setembro."
         pagina="Início"
       />
 

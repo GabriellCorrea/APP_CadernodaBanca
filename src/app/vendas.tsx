@@ -1,23 +1,50 @@
+import { useState, useEffect } from "react"
+import { CameraView, CameraType, useCameraPermissions } from "expo-camera"
 import { View, StyleSheet, Pressable, Text } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
 
 export default function Vendas() {
+  const [facing, setFacing] = useState<CameraType>("back") // câmera traseira por padrão
+  const [permission, requestPermission] = useCameraPermissions()
+
+  // enquanto não tiver permissão
+  if (!permission) {
+    return <View />
+  }
+
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.wrapper}>
+        <View style={styles.container}>
+          <Text style={{ textAlign: "center" }}>
+            Precisamos da permissão para usar a câmera
+          </Text>
+          <Pressable onPress={requestPermission} style={styles.botao}>
+            <Text style={styles.botaoTexto}>Permitir</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       {/* Header */}
       <Header
-          usuario="Andreas"
-          data="Quarta, 24 de Setembro."
-          pagina="Início"
+        usuario="Andreas"
+        pagina="Início"
       />
 
       {/* Card central */}
       <View style={styles.container}>
         <View style={styles.card}>
-          {/* Espaço da foto */}
-          <View style={styles.fotoBox} />
+          {/* Espaço da foto (agora câmera) */}
+          <CameraView
+            style={styles.fotoBox}
+            facing={facing}
+          />
 
           {/* Botão */}
           <Pressable
@@ -72,7 +99,7 @@ const styles = StyleSheet.create({
     width: "80%",
     height: 320,
     borderRadius: 12,
-    backgroundColor: "#EDEDED",
+    overflow: "hidden", // importante para cortar a câmera no formato arredondado
     marginVertical: 24,
   },
   botao: {
@@ -100,5 +127,3 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
 })
-
-

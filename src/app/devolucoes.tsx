@@ -6,17 +6,21 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 
 export default function Devolucoes() {
   const [produto, setProduto] = useState("");
   const [quantidade, setQuantidade] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const devolucoes = [
     {
@@ -64,12 +68,37 @@ export default function Devolucoes() {
     setMotivo("");
   }
 
+  async function handlePickDocument() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        console.log("Usuário cancelou a seleção");
+        return;
+      }
+
+      const file = result.assets[0];
+      setArquivoSelecionado(file);
+      setShowModal(true); // abre modal de confirmação
+    } catch (err) {
+      console.error("Erro ao selecionar arquivo:", err);
+    }
+  }
+
+  function confirmarArquivo() {
+    console.log("Arquivo confirmado:", arquivoSelecionado);
+    setShowModal(false);
+    // Aqui você pode enviar o arquivo para backend ou salvar
+  }
+
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       {/* Header fixo */}
       <Header
         usuario="Andreas"
-        data="Segunda, 08 de Setembro."
         pagina="Devolução"
       />
 
@@ -116,15 +145,18 @@ export default function Devolucoes() {
             placeholderTextColor="#434343"
           />
 
-          {/* Botão de adicionar fotos */}
-          <TouchableOpacity style={styles.botaoFoto}>
-            <Ionicons name="camera-outline" size={20} color="#555" />
-            <Text style={styles.textoFoto}>Adicionar Fotos</Text>
-          </TouchableOpacity>
-
           {/* Botão Registrar */}
           <TouchableOpacity style={styles.botao} onPress={handleRegistrar}>
+            <Ionicons name="refresh-circle-outline" size={20} color="#FFF" />
             <Text style={styles.botaoTexto}>Registrar Devolução</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.label}>Devolução por Arquivo:</Text>
+
+          {/* Botão de adicionar arquivo */}
+          <TouchableOpacity style={styles.botaoArquivo} onPress={handlePickDocument}>
+            <Ionicons name="document-attach-outline" size={20} color="#FFF" />
+            <Text style={styles.textoArquivo}>Adicionar Arquivo</Text>
           </TouchableOpacity>
         </View>
 
@@ -152,6 +184,35 @@ export default function Devolucoes() {
         </View>
       </ScrollView>
 
+      {/* Modal de Confirmação */}
+      <Modal transparent visible={showModal} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="document-attach-outline" size={40} color="#34495E" />
+            <Text style={styles.modalTitulo}>Confirmar Arquivo</Text>
+            {arquivoSelecionado && (
+              <Text style={styles.modalTexto}>{arquivoSelecionado.name}</Text>
+            )}
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={[styles.modalBotao, { backgroundColor: "#ccc" }]}
+                onPress={() => setShowModal(false)}
+              >
+                <Text style={styles.modalBotaoTexto}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBotao, { backgroundColor: "#E53935" }]}
+                onPress={confirmarArquivo}
+              >
+                <Text style={styles.modalBotaoTexto}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Barra inferior */}
       <BottomNav />
     </SafeAreaView>
@@ -166,7 +227,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    // ❌ não precisa mais do paddingTop fixo
   },
   tituloLinha: {
     flexDirection: "row",
@@ -204,34 +264,39 @@ const styles = StyleSheet.create({
     marginTop: 5,
     color: "#434343",
   },
-  botaoFoto: {
-    borderWidth: 1,
-    borderColor: "rgba(146, 138, 138, 0.5)",
+  botaoArquivo: {
+    backgroundColor: "#E53935",
+    padding: 14,
     borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 12,
+    flexDirection: "row",
+    borderWidth: 0.5,
+    borderColor: "#FFF",
   },
-  textoFoto: {
-    marginLeft: 6,
-    color: "#34495E",
-    fontWeight: "600",
+  textoArquivo: {
+    marginLeft: 8,
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   botao: {
     backgroundColor: "#E53935",
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 16,
     borderWidth: 0.5,
     borderColor: "#FFF",
+    flexDirection: "row",
   },
   botaoTexto: {
     color: "#FFF",
     fontWeight: "bold",
     fontSize: 16,
+    marginLeft: 8,
   },
   grid: {
     flexDirection: "row",
@@ -242,6 +307,47 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: "48%",
     marginBottom: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginVertical: 10,
+    color: "#34495E",
+  },
+  modalTexto: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalBotoes: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalBotao: {
+    flex: 1,
+    padding: 12,
+    marginHorizontal: 6,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalBotaoTexto: {
+    color: "#FFF",
+    fontWeight: "600",
   },
 });
 

@@ -7,11 +7,19 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 type HeaderProps = {
   usuario: string;
-  data: string;
   pagina: string;
 };
 
-export function Header({ usuario, data, pagina }: HeaderProps) {
+export function Header({ usuario, pagina }: HeaderProps) {
+  // Pega a data atual
+  const hoje = new Date();
+  const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+    weekday: "long", // segunda-feira
+    day: "2-digit",  // 30
+    month: "long",   // setembro
+    year: "numeric", // 2025
+  });
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Header principal */}
@@ -35,7 +43,7 @@ export function Header({ usuario, data, pagina }: HeaderProps) {
       {/* Container 2 - Data */}
       <View style={styles.container2}>
         <Icon name="calendar" size={20} color="white" style={{ marginRight: 8 }} />
-        <Text style={styles.data}>{data}</Text>
+        <Text style={styles.data}>{dataFormatada}</Text>
       </View>
 
       {/* Container 3 - Página */}

@@ -11,7 +11,6 @@ export default function Relatorios() {
       {/* Header */}
       <Header 
         usuario="Andreas" 
-        data="Quarta, 24 de Setembro." 
         pagina="Relatórios e Insights" 
       />
 

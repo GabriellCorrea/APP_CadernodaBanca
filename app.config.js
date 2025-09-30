@@ -11,17 +11,22 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
-      supportsTablet: true
+      supportsTablet: true,
+      infoPlist: {
+        NSCameraUsageDescription: "Allow $(PRODUCT_NAME) to access your camera",
+        NSMicrophoneUsageDescription: "Allow $(PRODUCT_NAME) to access your microphone"
+      }
     },
     android: {
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        // foregroundImage: "./assets/images/android-icon-foreground.png",
-        // backgroundImage: "./assets/images/android-icon-background.png",
-        // monochromeImage: "./assets/images/android-icon-monochrome.png"
+        backgroundColor: "#E6F4FE"
       },
       edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      permissions: [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     web: {
       output: "static",
@@ -29,6 +34,14 @@ export default {
     },
     plugins: [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
+          microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone",
+          recordAudioAndroid: true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -47,7 +60,8 @@ export default {
       reactCompiler: true
     },
     extra: {
-      API_URL: process.env.API_URL,
-    },
-  },
+      API_URL: process.env.API_URL
+    }
+  }
 };
+

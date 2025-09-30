@@ -60,7 +60,6 @@ export default function Estoque() {
       {/* Header */}
       <Header
         usuario="Andreas"
-        data="Segunda, 08 de Setembro."
         pagina="Estoque"
       />
 
