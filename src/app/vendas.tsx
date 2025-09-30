@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/barra_navegacao"
 
 export default function Vendas() {
   const [facing, setFacing] = useState<CameraType>("back") // câmera traseira por padrão
+  const [codigoBarras, setCodigoBarras] = useState<string | null>(null)
   const [permission, requestPermission] = useCameraPermissions()
 
   // enquanto não tiver permissão
@@ -44,6 +45,18 @@ export default function Vendas() {
           <CameraView
             style={styles.fotoBox}
             facing={facing}
+            barcodeScannerSettings={{
+              barcodeTypes: ['code128', 'ean13', 'ean8', 'qr'],
+            }}
+            onBarcodeScanned={(result) => {
+              if (result.data) {
+                setCodigoBarras(result.data)
+                console.log("Código de barras lido:", result.data)
+                // Aqui você pode adicionar lógica para buscar o produto pelo código de barras (usando o endpoint "/revistas/buscar/codigo-barras?q={código}" )
+                // e atualizar a interface conforme necessário
+                // se encontrar um produto com o código lido, deu tudo certo
+              }
+            }}
           />
 
           {/* Botão */}
