@@ -1,19 +1,57 @@
-
 import { useState } from "react";
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { router } from "expo-router";
-import { Feather } from '@expo/vector-icons';
-
-
-
+import { Feather } from "@expo/vector-icons";
+import { supabase } from "../lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
 
 export default function Login() {
   const [login, setLogin] = useState("");
   const [senha, setSenha] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleEntrar() {
-    router.push("/home");
+  async function signInWithEmail() {
+    if (!login || !senha) {
+      Alert.alert("Erro", "Preencha email e senha");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.signInWithPassword({
+        email: login,
+        password: senha,
+      });
+
+      if (error) {
+        Alert.alert("Erro", error.message);
+      } else if (session) {
+        await AsyncStorage.setItem("access_token", session.access_token)
+        await AsyncStorage.setItem("refresh_token", session.refresh_token)
+        router.replace("/home");
+      }
+    } catch (err) {
+      Alert.alert("Erro inesperado", String(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   const { width } = Dimensions.get("window");
@@ -25,23 +63,40 @@ export default function Login() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingVertical: 32 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: "center",
+          paddingVertical: 32,
+        }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={[styles.card, isDesktop && styles.cardDesktop, styles.cardWithLogoUnified]}> 
+        <View
+          style={[
+            styles.card,
+            isDesktop && styles.cardDesktop,
+            styles.cardWithLogoUnified,
+          ]}
+        >
           <Image
             source={require("../../assets/images/CADERNO-Photoroom.png")}
             style={[styles.logoUnified, isDesktop && styles.logoUnifiedDesktop]}
             resizeMode="contain"
           />
           <Text style={styles.loginTitle}>Login</Text>
+
+          {/* Email */}
           <View style={styles.inputGroup}>
-            <Feather name="user" size={20} color="#E67E22" style={styles.inputIcon} />
+            <Feather
+              name="user"
+              size={20}
+              color="#E67E22"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               value={login}
               onChangeText={setLogin}
-              placeholder="Email ou usuário"
+              placeholder="Email"
               placeholderTextColor="#999"
               autoCapitalize="none"
               autoCorrect={false}
@@ -49,8 +104,15 @@ export default function Login() {
               underlineColorAndroid="transparent"
             />
           </View>
+
+          {/* Senha */}
           <View style={styles.inputGroup}>
-            <Feather name="lock" size={20} color="#E67E22" style={styles.inputIcon} />
+            <Feather
+              name="lock"
+              size={20}
+              color="#E67E22"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               value={senha}
@@ -62,26 +124,46 @@ export default function Login() {
               autoCorrect={false}
               underlineColorAndroid="transparent"
             />
-            <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeIcon}>
-              <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#E67E22" />
+            <TouchableOpacity
+              onPress={() => setShowPassword((v) => !v)}
+              style={styles.eyeIcon}
+            >
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#E67E22"
+              />
             </TouchableOpacity>
           </View>
+
+          {/* Link esqueci senha */}
           <View style={styles.rowBetween}>
             <View style={{ flex: 1 }} />
             <TouchableOpacity>
               <Text style={styles.link}>Esqueci minha senha</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.botao} onPress={handleEntrar}>
-            <Text style={styles.botaoTexto}>Entrar</Text>
+
+          {/* Botão de login */}
+          <TouchableOpacity
+            style={[styles.botao, loading && { opacity: 0.7 }]}
+            onPress={signInWithEmail}
+            disabled={loading}
+          >
+            <Text style={styles.botaoTexto}>
+              {loading ? "Entrando..." : "Entrar"}
+            </Text>
           </TouchableOpacity>
+
+          {/* Cadastro */}
           <View style={styles.signupRow}>
             <Text style={styles.signupText}>Não tem uma conta?</Text>
             <TouchableOpacity>
               <Text style={styles.signupLink}>Cadastre-se</Text>
             </TouchableOpacity>
           </View>
-          {/* Conteúdo extra para forçar scroll no PC/web (remova depois do teste) */}
+
+          {/* Rodapé */}
           <View style={{ height: 300 }} />
           <View style={styles.footer}>
             <Text style={styles.footerText}>Produzido pelo IBMEC - 2025</Text>
@@ -97,15 +179,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F2F2F2",
   },
-  container: {
-    // Removido flex: 1 e minHeight para evitar travar o scroll
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-  containerDesktop: {
-    justifyContent: "center",
-    minHeight: 600,
-  },
   card: {
     width: "100%",
     maxWidth: 400,
@@ -118,16 +191,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     alignSelf: "center",
-    marginBottom: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cardDesktop: {
     borderRadius: 24,
-    marginTop: 0,
-    marginBottom: 0,
   },
   cardWithLogoUnified: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 32,
   },
   logoUnified: {
@@ -159,9 +229,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFAFA",
     marginBottom: 16,
     paddingHorizontal: 10,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   inputIcon: {
     marginRight: 6,
@@ -202,9 +272,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     marginBottom: 18,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   botaoTexto: {
     color: "#FFF",
@@ -214,12 +284,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 18,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
-    color: '#bbb',
+    color: "#bbb",
     fontSize: 13,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     letterSpacing: 0.2,
   },
   signupRow: {
