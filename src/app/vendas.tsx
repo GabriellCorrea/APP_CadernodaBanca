@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react"
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera"
-import { View, StyleSheet, Pressable, Text, Alert, ActivityIndicator, ScrollView } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
+import { Header } from "@/components/header"
 import { apiService } from "@/services/api"
-import { router } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { CameraType, CameraView, useCameraPermissions } from "expo-camera"
+import { router } from "expo-router"
+import { useEffect, useState } from "react"
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function Vendas() {
   const [facing, setFacing] = useState<CameraType>("back") // câmera traseira por padrão
@@ -24,21 +24,21 @@ export default function Vendas() {
     setCodigoBarras(null);
     setScanned(false);
     console.log('🔄 Scanner resetado - nenhum produto deve aparecer');
-    
+
     const checkAuth = async () => {
       try {
         // Primeiro verifica se tem token salvo (do Supabase)
         const token = await AsyncStorage.getItem('access_token'); // Mudei para access_token do Supabase
         console.log('🔍 Debug - Token do Supabase:', token ? `${token.substring(0, 20)}...` : 'NENHUM TOKEN ENCONTRADO');
-        
+
         // Também verifica global para debug
         const globalToken = (global as any).authToken;
         console.log('🔍 Debug - Token no global:', globalToken ? `${globalToken.substring(0, 20)}...` : 'NENHUM TOKEN GLOBAL');
-        
+
         if (!token) {
           console.log('❌ Usuário não autenticado - redirecionando para login');
           Alert.alert(
-            "Acesso negado", 
+            "Acesso negado",
             "Você precisa fazer login para acessar o scanner de produtos",
             [
               {
@@ -49,14 +49,14 @@ export default function Vendas() {
           );
           return;
         }
-        
+
         console.log('Token encontrado:', token ? `${token.substring(0, 20)}...` : 'Nenhum token');
-        
+
         // Se tem token, testa a API
         console.log('Testando conectividade da API...');
         await apiService.testConnection();
         console.log('API está acessível');
-        
+
       } catch (error) {
         console.error('Erro na verificação de auth/API:', error);
         // Se deu erro na API mas tem token, continua (pode ser problema de rede)
@@ -66,36 +66,42 @@ export default function Vendas() {
         }
       }
     };
-    
+
     checkAuth();
   }, [])
+
+  useEffect(() => {
+    console.log("Produto atualizado:", produto);
+  }, [produto]);
 
   // Função para buscar produto por código de barras
   const buscarProduto = async (codigo: string) => {
     // Evita scan do mesmo código ou múltiplos scans
     if (scanned || loading || codigo === lastScannedCode) return
-    
+
     console.log('Código escaneado:', codigo)
     setScanned(true)
     setLoading(true)
     setLastScannedCode(codigo)
-    
+
     try {
+      console.log("CÓDIGO DE BARRAS LIDO: ", codigo)
       const produtoData = await apiService.getProductByBarcode(codigo)
       setProduto(produtoData)
+      console.log("PRODUTO ENCONTRADO E SETADO:", produto)
       setCodigoBarras(codigo)
       console.log('Produto encontrado:', produtoData)
-      
+
       // Libera para novo scan após encontrar produto
       setTimeout(() => {
         setScanned(false)
       }, 1000)
-      
+
     } catch (error: any) {
       console.error('Erro ao buscar produto:', error)
       setProduto(null)
       setCodigoBarras(null)
-      
+
       // Mostra erro específico baseado no status
       let mensagemErro = "Produto não encontrado";
       if (error.response?.status === 403) {
@@ -105,9 +111,9 @@ export default function Vendas() {
       } else if (error.response?.status >= 500) {
         mensagemErro = "Erro no servidor. Tente novamente.";
       }
-      
+
       console.log('Mensagem de erro:', mensagemErro);
-      
+
       // Libera para novo scan após erro
       setTimeout(() => {
         setScanned(false)
@@ -137,13 +143,18 @@ export default function Vendas() {
     setLoading(true)
     try {
       const vendaData = {
-        produto_id: produto.id,
+        metodo_pagamento: 'Débito',
         codigo_barras: codigoBarras,
-        quantidade: 1,
-        preco_unitario: produto.preco,
-        total: produto.preco
+        qtd_vendida: 1,
+        desconto_aplicado: 0.0,
+        valor_total: parseFloat(produto["data"]["preco_capa"]),
+        data_venda: new Date().toISOString()
       }
-      
+      console.log("Dados da venda: ", vendaData)
+      console.log("Dados do produto: ", produto)
+      console.log("Dados do produto (preço): ", produto["data"]["preco_capa"])
+
+      // let response = await apiService.post('/vendas/cadastrar-venda-por-codigo', vendaData);
       await apiService.confirmarVenda(vendaData)
       Alert.alert("Sucesso!", "Venda confirmada com sucesso")
       resetScanner()
@@ -184,96 +195,96 @@ export default function Vendas() {
       />
 
       {/* Scroll Container */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Card central */}
         <View style={styles.container}>
-        <View style={styles.card}>
-          {/* Espaço da foto (agora câmera) */}
-          <CameraView
-            style={styles.fotoBox}
-            facing={facing}
-            barcodeScannerSettings={{
-              barcodeTypes: ['code128', 'ean13', 'ean8', 'qr'],
-            }}
-            onBarcodeScanned={(result) => {
-              if (result.data) {
-                buscarProduto(result.data)
-              }
-            }}
-          />
-          
-          {/* Status do scanner */}
-          {!produto && !loading && (
-            <View style={styles.statusInfo}>
-              <Text style={styles.statusTexto}>
-                {scanned ? "Aguardando..." : "Escaneie um código de barras"}
-              </Text>
-            </View>
-          )}
+          <View style={styles.card}>
+            {/* Espaço da foto (agora câmera) */}
+            <CameraView
+              style={styles.fotoBox}
+              facing={facing}
+              barcodeScannerSettings={{
+                barcodeTypes: ['code128', 'ean13', 'ean8', 'qr'],
+              }}
+              onBarcodeScanned={(result) => {
+                if (result.data) {
+                  buscarProduto(result.data)
+                }
+              }}
+            />
 
-          {loading && (
-            <View style={styles.statusInfo}>
-              <ActivityIndicator size="large" color="#E67E22" />
-              <Text style={styles.statusTexto}>Buscando produto...</Text>
-            </View>
-          )}
-          
-          {produto && (
-            <View style={styles.produtoInfo}>
-              <Text style={styles.produtoNome}>{produto.nome || produto.title}</Text>
-              <Text style={styles.produtoPreco}>R$ {produto.preco?.toFixed(2) || '0.00'}</Text>
-              <Text style={styles.codigoBarras}>Código: {codigoBarras}</Text>
-            </View>
-          )}
-
-          {/* Botões */}
-          <View style={styles.botoesContainer}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.botao,
-                pressed && styles.botaoPressionado,
-                !produto && styles.botaoDisabled
-              ]}
-              onPress={handleConfirmarVenda}
-              disabled={loading || !produto}
-            >
-              {({ pressed }) => (
-                <Text
-                  style={[
-                    styles.botaoTexto,
-                    pressed && styles.botaoTextoPressionado,
-                  ]}
-                >
-                  {loading ? "Processando..." : "Confirmar venda"}
+            {/* Status do scanner */}
+            {!produto && !loading && (
+              <View style={styles.statusInfo}>
+                <Text style={styles.statusTexto}>
+                  {scanned ? "Aguardando..." : "Escaneie um código de barras"}
                 </Text>
-              )}
-            </Pressable>
+              </View>
+            )}
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.botaoSecundario,
-                pressed && styles.botaoSecundarioPressionado,
-              ]}
-              onPress={resetScanner}
-              disabled={loading}
-            >
-              {({ pressed }) => (
-                <Text
-                  style={[
-                    styles.botaoSecundarioTexto,
-                    pressed && styles.botaoSecundarioTextoPressionado,
-                  ]}
-                >
-                  Novo scan
-                </Text>
-              )}
-            </Pressable>
+            {loading && (
+              <View style={styles.statusInfo}>
+                <ActivityIndicator size="large" color="#E67E22" />
+                <Text style={styles.statusTexto}>Buscando produto...</Text>
+              </View>
+            )}
+
+            {produto && (
+              <View style={styles.produtoInfo}>
+                <Text style={styles.produtoNome}>{produto.nome || produto.title}</Text>
+                <Text style={styles.produtoPreco}>R$ {produto.preco?.toFixed(2) || '0.00'}</Text>
+                <Text style={styles.codigoBarras}>Código: {codigoBarras}</Text>
+              </View>
+            )}
+
+            {/* Botões */}
+            <View style={styles.botoesContainer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.botao,
+                  pressed && styles.botaoPressionado,
+                  !produto && styles.botaoDisabled
+                ]}
+                onPress={handleConfirmarVenda}
+                disabled={loading || !produto}
+              >
+                {({ pressed }) => (
+                  <Text
+                    style={[
+                      styles.botaoTexto,
+                      pressed && styles.botaoTextoPressionado,
+                    ]}
+                  >
+                    {loading ? "Processando..." : "Confirmar venda"}
+                  </Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.botaoSecundario,
+                  pressed && styles.botaoSecundarioPressionado,
+                ]}
+                onPress={resetScanner}
+                disabled={loading}
+              >
+                {({ pressed }) => (
+                  <Text
+                    style={[
+                      styles.botaoSecundarioTexto,
+                      pressed && styles.botaoSecundarioTextoPressionado,
+                    ]}
+                  >
+                    Novo scan
+                  </Text>
+                )}
+              </Pressable>
+            </View>
           </View>
-        </View>
         </View>
       </ScrollView>
 

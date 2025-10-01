@@ -1,9 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // URL base da API
-const API_BASE_URL = Constants.expoConfig?.extra?.API_URL || 'https://andreacontrollerapi.onrender.com';
+const API_BASE_URL = 'https://andreacontrollerapi.onrender.com';
 
 // Instância do axios configurada
 const api = axios.create({
@@ -131,16 +131,23 @@ export const apiService = {
       }
     };
     
+    const response = await api.get(`/revistas/buscar/codigo-barras?q=${barcode}`);
+    console.log(response.data)
+    if (response.data) {
+      console.log(response.data)
+      return response.data
+    }
     // Busca o produto ou usa o padrão
-    const produto = produtosFake[barcode as keyof typeof produtosFake] || produtosFake.default;
+    // const produto = produtosFake[barcode as keyof typeof produtosFake] || produtosFake.default;
     
-    console.log('✅ Produto encontrado:', produto.nome);
-    return produto;
+    // console.log('✅ Produto encontrado:', produto.nome);
+    // return produto;
   },
 
   // Confirmar venda
   confirmarVenda: async (vendaData: any) => {
-    const response = await api.post('/vendas', vendaData);
+    console.log("Tentando confirmar a venda")
+    const response = await api.post('/vendas/cadastrar-venda-por-codigo', vendaData);
     return response.data;
   },
 
