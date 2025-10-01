@@ -235,8 +235,8 @@ export default function Vendas() {
 
             {produto && (
               <View style={styles.produtoInfo}>
-                <Text style={styles.produtoNome}>{produto.nome || produto.title}</Text>
-                <Text style={styles.produtoPreco}>R$ {produto.preco?.toFixed(2) || '0.00'}</Text>
+                <Text style={styles.produtoNome}>{produto["data"]["nome"]}</Text>
+                <Text style={styles.produtoPreco}>R$ {produto["data"]["preco_capa"].toFixed(2) || '0.00'}</Text>
                 <Text style={styles.codigoBarras}>Código: {codigoBarras}</Text>
               </View>
             )}

@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 
 // URL base da API
 const API_BASE_URL = 'https://andreacontrollerapi.onrender.com';
@@ -18,7 +17,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    
+
     // Adiciona token de autenticação se existir
     try {
       const token = await AsyncStorage.getItem('access_token'); // Token do Supabase
@@ -33,7 +32,7 @@ api.interceptors.request.use(
     } catch (error) {
       console.error('Erro ao recuperar token do AsyncStorage:', error);
     }
-    
+
     return config;
   },
   (error) => {
@@ -52,7 +51,7 @@ api.interceptors.response.use(
       const token = await AsyncStorage.getItem('authToken');
       console.error('Erro 403 - Não autenticado. Token atual:', token ? 'Existe' : 'Não existe');
       console.error('Headers enviados:', error.config?.headers);
-      
+
       // Se não tem token, remove qualquer token inválido que possa existir
       if (!token) {
         await AsyncStorage.removeItem('authToken');
@@ -88,13 +87,13 @@ export const apiService = {
   // Autenticação - TEMPORÁRIO: Como a API não tem endpoint de login, simulamos um token
   login: async (email: string, password: string) => {
     console.log('🔍 Tentando login com:', email, password);
-    
+
     // Simula validação básica
     if (email && password) {
       // Gera um token fake para testes
       const fakeToken = `fake_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('✅ Login simulado bem-sucedido, token gerado:', fakeToken);
-      
+
       return {
         success: true,
         token: fakeToken,
@@ -108,7 +107,7 @@ export const apiService = {
   // Buscar produto por código de barras - TEMPORÁRIO: Simula produtos para teste
   getProductByBarcode: async (barcode: string) => {
     console.log('🔍 Buscando produto com código:', barcode);
-    
+
     // Simula produtos de exemplo (uma revista que você comprou)
     const produtosFake = {
       '9786525936314': { // O código da revista que você comprou
@@ -130,7 +129,7 @@ export const apiService = {
         codigo_barras: barcode
       }
     };
-    
+
     const response = await api.get(`/revistas/buscar/codigo-barras?q=${barcode}`);
     console.log(response.data)
     if (response.data) {
@@ -139,7 +138,7 @@ export const apiService = {
     }
     // Busca o produto ou usa o padrão
     // const produto = produtosFake[barcode as keyof typeof produtosFake] || produtosFake.default;
-    
+
     // console.log('✅ Produto encontrado:', produto.nome);
     // return produto;
   },
@@ -151,7 +150,46 @@ export const apiService = {
     return response.data;
   },
 
-  // Outros endpoints
+  enviarArquivo: async (file: any) => {
+    console.log("📤 Enviando arquivo:", {
+      uri: file.uri,
+      name: file.name,
+      type: file.mimeType,
+      size: file.size
+    });
+
+    const formData = new FormData();
+    // @ts-ignore
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name || "chamada.pdf",
+      type: file.mimeType || "application/pdf",
+    });
+
+    // Log do FormData (só funciona em algumas plataformas)
+    console.log("📦 FormData preparado");
+
+    try {
+      const response = await api.post("/chamadas/cadastrar-chamada", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 30000,
+      });
+
+      console.log("✅ Sucesso:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Erro detalhado:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.config?.headers
+      });
+      throw error;
+    }
+  },
+
   getMaisVendidos: async () => {
     const response = await api.get('/mais-vendidos');
     return response.data;

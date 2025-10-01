@@ -15,6 +15,8 @@ import { CardRevista } from "@/components/card_revista";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 
+import { apiService } from "@/services/api";
+
 export default function Devolucoes() {
   const [produto, setProduto] = useState("");
   const [quantidade, setQuantidade] = useState("");
@@ -71,7 +73,7 @@ export default function Devolucoes() {
   async function handlePickDocument() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
+        type: "application/pdf", // ← MUDANÇA: específico para PDF
         copyToCacheDirectory: true,
       });
 
@@ -80,21 +82,48 @@ export default function Devolucoes() {
         return;
       }
 
+      console.log("📄 Arquivo selecionado (completo):", JSON.stringify(result, null, 2));
+
       const file = result.assets[0];
+
+      // Validações importantes
+      if (!file.uri) {
+        console.error("❌ Arquivo sem URI!");
+        return;
+      }
+
+      console.log("✅ Arquivo válido:", {
+        name: file.name,
+        uri: file.uri,
+        mimeType: file.mimeType,
+        size: file.size
+      });
+
       setArquivoSelecionado(file);
-      setShowModal(true); // abre modal de confirmação
+      setShowModal(true);
     } catch (err) {
-      console.error("Erro ao selecionar arquivo:", err);
+      console.error("❌ Erro ao selecionar arquivo:", err);
     }
   }
 
   function confirmarArquivo() {
     console.log("Arquivo confirmado:", arquivoSelecionado);
     setShowModal(false);
-    // Aqui você pode enviar o arquivo para backend ou salvar
+    if (arquivoSelecionado) {
+      apiService.enviarArquivo(arquivoSelecionado)
+        .then((res) => {
+          console.log("Arquivo enviado com sucesso:", res);
+          // Aqui você pode mostrar um alerta ou atualizar o estado
+        })
+        .catch((err) => {
+          console.error("Erro ao enviar arquivo:", err);
+          // Aqui você pode mostrar um alerta de erro
+        });
+    }
   }
 
-  return (
+
+  (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       {/* Header fixo */}
       <Header
