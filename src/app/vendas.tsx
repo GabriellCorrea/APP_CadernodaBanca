@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera"
-import { View, StyleSheet, Pressable, Text, Alert, ActivityIndicator } from "react-native"
+import { View, StyleSheet, Pressable, Text, Alert, ActivityIndicator, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Header } from "@/components/header"
 import { BottomNav } from "@/components/barra_navegacao"
@@ -19,13 +19,24 @@ export default function Vendas() {
 
   // Verifica autenticação quando o componente iniciar
   useEffect(() => {
+    // Limpa qualquer produto anterior quando entra na tela
+    setProduto(null);
+    setCodigoBarras(null);
+    setScanned(false);
+    console.log('🔄 Scanner resetado - nenhum produto deve aparecer');
+    
     const checkAuth = async () => {
       try {
-        // Primeiro verifica se tem token salvo
-        const token = await AsyncStorage.getItem('authToken');
+        // Primeiro verifica se tem token salvo (do Supabase)
+        const token = await AsyncStorage.getItem('access_token'); // Mudei para access_token do Supabase
+        console.log('🔍 Debug - Token do Supabase:', token ? `${token.substring(0, 20)}...` : 'NENHUM TOKEN ENCONTRADO');
+        
+        // Também verifica global para debug
+        const globalToken = (global as any).authToken;
+        console.log('🔍 Debug - Token no global:', globalToken ? `${globalToken.substring(0, 20)}...` : 'NENHUM TOKEN GLOBAL');
         
         if (!token) {
-          console.log('Usuário não autenticado - redirecionando para login');
+          console.log('❌ Usuário não autenticado - redirecionando para login');
           Alert.alert(
             "Acesso negado", 
             "Você precisa fazer login para acessar o scanner de produtos",
@@ -49,7 +60,7 @@ export default function Vendas() {
       } catch (error) {
         console.error('Erro na verificação de auth/API:', error);
         // Se deu erro na API mas tem token, continua (pode ser problema de rede)
-        const token = await AsyncStorage.getItem('authToken');
+        const token = await AsyncStorage.getItem('access_token'); // Mudei para access_token do Supabase
         if (!token) {
           router.push("/");
         }
@@ -172,8 +183,14 @@ export default function Vendas() {
         pagina="Início"
       />
 
-      {/* Card central */}
-      <View style={styles.container}>
+      {/* Scroll Container */}
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Card central */}
+        <View style={styles.container}>
         <View style={styles.card}>
           {/* Espaço da foto (agora câmera) */}
           <CameraView
@@ -257,7 +274,8 @@ export default function Vendas() {
             </Pressable>
           </View>
         </View>
-      </View>
+        </View>
+      </ScrollView>
 
       {/* Bottom nav */}
       <BottomNav />
@@ -270,8 +288,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F8F8",
   },
-  container: {
+  scrollContainer: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingBottom: 100, // Espaço para o BottomNav
+  },
+  container: {
     justifyContent: "center",
     padding: 16,
   },

@@ -4,6 +4,7 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View, Dimensions,
 import { router } from "expo-router";
 import { Feather } from '@expo/vector-icons';
 import { apiService } from '@/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -24,14 +25,26 @@ export default function Login() {
     try {
       // Tenta fazer login na API
       const response = await apiService.login(login, senha);
-      console.log("Login response completo:", response);
+      console.log("🔍 Login response completo:", JSON.stringify(response, null, 2));
+      console.log("🔍 Tipo da response:", typeof response);
+      console.log("🔍 Keys da response:", Object.keys(response || {}));
       
-      // Salva o token (tenta diferentes formatos comuns)
-      let token = response.token || response.access_token || response.data?.token || response.data?.access_token;
+      // Salva o token (agora sabemos que está em response.token)
+      let token = response.token;
+      console.log("🔍 Token extraído:", token ? `${token.substring(0, 20)}...` : 'NENHUM TOKEN ENCONTRADO NA RESPONSE');
       
       if (token) {
+        // Salva o token no AsyncStorage para persistência
+        await AsyncStorage.setItem('authToken', token);
+        console.log("✅ Token salvo no AsyncStorage:", token.substring(0, 20) + "...");
+        
+        // Também salva no global para compatibilidade imediata
         (global as any).authToken = token;
-        console.log("Token salvo:", token);
+        console.log("✅ Token salvo no global");
+        
+        // Verifica se foi salvo corretamente
+        const savedToken = await AsyncStorage.getItem('authToken');
+        console.log("🔍 Verificação - Token recuperado do AsyncStorage:", savedToken ? `${savedToken.substring(0, 20)}...` : 'ERRO: Não conseguiu salvar');
       } else {
         console.warn("Token não encontrado na resposta:", response);
         // Mesmo assim continua, talvez a API não precise de token para alguns endpoints
