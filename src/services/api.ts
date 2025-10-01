@@ -120,7 +120,15 @@ export const apiService = {
         edicao: 'poder absoluto',
         codigo_barras: barcode
       },
-  
+      default: {
+        id: 0,
+        nome: 'Produto não encontrado',
+        title: 'Produto não encontrado',
+        preco: 0,
+        estoque: 0,
+        edicao: '',
+        codigo_barras: barcode
+      }
     };
     
     // Busca o produto ou usa o padrão
