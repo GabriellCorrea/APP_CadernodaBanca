@@ -17,7 +17,7 @@ export default function Home() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <Header
-        usuario="Andreas"
+        usuario="Andrea"
         pagina="Início"
       />
 

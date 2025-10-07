@@ -1,81 +1,136 @@
-import axios from 'axios';
-import Constants from 'expo-constants';
+import axios from 'axios'
+import { supabase } from '../lib/supabase'
 
-// URL base da API
-const API_BASE_URL = Constants.expoConfig?.extra?.API_URL || 'https://andreacontrollerapi.onrender.com';
+const API_BASE_URL = 'https://andreacontrollerapi.onrender.com'
 
-// Instância do axios configurada
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+})
 
-// Interceptor para requisições
-api.interceptors.request.use(
-  (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Adiciona o token do Supabase nas requisições
+api.interceptors.request.use(async (config) => {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
-);
 
-// Interceptor para respostas
+  return config
+})
+
 api.interceptors.response.use(
-  (response) => {
-    console.log(`API Response: ${response.status} ${response.config.url}`);
-    return response;
-  },
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
+  (res) => res,
+  (err) => {
+    throw err
   }
-);
+)
 
-// Funções da API
+const toArray = (data: any, key?: string) => {
+  if (!data) return []
+  const val = key ? data[key] : data
+  return Array.isArray(val) ? val : []
+}
+
 export const apiService = {
-  // Autenticação
-  login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    return response.data;
+  async getRevistas() {
+    const res = await api.get('/revistas/tudo')
+    const revistas = toArray(res.data, 'data')
+
+    return revistas.map((rev: any) => ({
+      ...rev,
+      imagem: rev.imagem?.source?.uri ? { uri: rev.imagem.source.uri } : null,
+    }))
   },
 
-  // Buscar produto por código de barras
-  getProductByBarcode: async (barcode: string) => {
-    const response = await api.get(`/revistas/buscar/codigo-barras?q=${barcode}`);
-    return response.data;
+  async buscarRevistaPorNome(nome: string) {
+    const res = await api.get(`/revistas/buscar/nome?q=${encodeURIComponent(nome)}`)
+    return toArray(res.data, 'data')
   },
 
-  // Confirmar venda
-  confirmarVenda: async (vendaData: any) => {
-    const response = await api.post('/vendas', vendaData);
-    return response.data;
+  async buscarRevistaPorCodigoBarras(codigo: string) {
+    const res = await api.get(`/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo)}`)
+    return toArray(res.data, 'data')
   },
 
-  // Outros endpoints
-  getMaisVendidos: async () => {
-    const response = await api.get('/mais-vendidos');
-    return response.data;
+  async buscarRevistaPorEdicao(edicao: string) {
+    const res = await api.get(`/revistas/buscar/edicao?q=${encodeURIComponent(edicao)}`)
+    return toArray(res.data, 'data')
   },
 
-  getEstoque: async () => {
-    const response = await api.get('/estoque');
-    return response.data;
+  async cadastrarFotoRevista(file: any) {
+    const formData = new FormData()
+    // @ts-ignore
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name || 'revista.jpg',
+      type: file.mimeType || 'image/jpeg',
+    })
+
+    const res = await api.post('/revistas/cadastrar-foto', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    return res.data
   },
 
-  getRelatorios: async () => {
-    const response = await api.get('/relatorios');
-    return response.data;
+  async getVendas() {
+    const res = await api.get('/vendas/tudo')
+    return toArray(res.data, 'data')
   },
 
-  getMetaDoDia: async () => {
-    const response = await api.get('/meta-do-dia');
-    return response.data;
+  async getVendasRecentes() {
+    const res = await api.get('/vendas/recentes')
+    return toArray(res.data, 'data')
   },
-};
 
-export default api;
+  async getVendasHoje() {
+    const res = await api.get('/vendas/hoje')
+    return toArray(res.data, 'data')
+  },
+
+  async cadastrarVendaPorCodigo(dados: any) {
+    const res = await api.post('/vendas/cadastrar-venda-por-codigo', dados)
+    return res.data
+  },
+
+  async cadastrarVendaPorId(dados: any) {
+    const res = await api.post('/vendas/cadastrar-venda-por-id', dados)
+    return res.data
+  },
+
+  async getRelatorioSemana() {
+    const res = await api.get('/vendas/relatorio-semana')
+    return res.data
+  },
+
+  async cadastrarChamada(file: any) {
+    const formData = new FormData()
+    // @ts-ignore
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name || 'chamada.pdf',
+      type: file.mimeType || 'application/pdf',
+    })
+
+    const res = await api.post('/chamadas/cadastrar-chamada', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+
+    return res.data
+  },
+
+  async listarChamadasUsuario(usuarioId: string) {
+    const res = await api.get(`/chamadas/listar-chamadas-usuario?usuarioId=${usuarioId}`)
+    return toArray(res.data, 'data')
+  },
+
+  async ping() {
+    const res = await api.get('/ping')
+    return res.data
+  },
+}
+
+export default api

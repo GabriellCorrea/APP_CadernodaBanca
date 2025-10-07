@@ -19,8 +19,14 @@ export function CardRevista({
 }: CardRevistaProps) {
   return (
     <View style={styles.card}>
-      <Image source={{ uri: imagem }} style={styles.imagem} />
-
+      <Image
+            source={
+              typeof imagem === "string"
+                ? { uri: imagem }
+                : imagem
+            }
+            style={styles.imagem}
+          />
       <View style={styles.info}>
         <Text style={styles.titulo} numberOfLines={3}>
           {titulo}

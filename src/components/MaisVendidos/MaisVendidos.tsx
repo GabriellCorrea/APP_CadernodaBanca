@@ -1,107 +1,119 @@
+import React, { useEffect, useState } from "react";
+import { View, Text, ActivityIndicator, FlatList, Image } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { apiService } from "@/services/api";
+import { styles } from "./styles";
 
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import axios from 'axios';
-import Constants from 'expo-constants';
-import { styles } from './styles';
-
-
-// Tipo para produto retornado da API
-type Produto = {
-  id: string;
-  title: string;
-  price: string;
-  sales: string;
-  image: string; // URL da imagem
+type Revista = {
+  id_revista: string;
+  nome: string;
+  imagem: string;
+  preco_liquido: number;
 };
 
+type ItemMaisVendido = {
+  id_revista: string;
+  nome: string;
+  imagem: string;
+  preco: number;
+  totalVendido: number;
+  qtdVendida: number;
+};
 
-// Card de produto individual
-const CardProduto: React.FC<{ item: Produto }> = ({ item }) => (
-  <View style={styles.cardContainer}>
-    <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
-    <View style={styles.cardTextContainer}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardPrice}>{item.price}</Text>
-      <Text style={styles.cardSales}>Vendas: {item.sales}</Text>
-    </View>
-  </View>
-);
-
-
-export const MaisVendidos: React.FC = () => {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+export function MaisVendidos() {
+  const [maisVendidos, setMaisVendidos] = useState<ItemMaisVendido[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Busca a URL da API do extra do app.config.js
-    const apiUrl = Constants.expoConfig?.extra?.API_URL || "";
-    if (!apiUrl) {
-      setError("API_URL não configurada.");
-      setLoading(false);
-      return;
-    }
-
-    const buscarProdutos = async () => {
+    async function carregarMaisVendidos() {
       try {
-        const response = await axios.get<Produto[]>(apiUrl);
-        setProdutos(response.data);
-      } catch (err) {
-        setError("Não foi possível carregar os produtos.");
-        console.error(err);
+        setLoading(true);
+
+        const [vendas, revistas] = await Promise.all([
+          apiService.getVendas(),
+          apiService.getRevistas(),
+        ]);
+
+        const mapa = new Map<string, ItemMaisVendido>();
+
+        for (const venda of vendas) {
+          const revista = revistas.find((r: Revista) => r.id_revista === venda.id_produto);
+          if (!revista) continue;
+
+          const existente = mapa.get(venda.id_produto) || {
+            id_revista: revista.id_revista,
+            nome: revista.nome,
+            imagem: revista.imagem,
+            preco: revista.preco_liquido,
+            totalVendido: 0,
+            qtdVendida: 0,
+          };
+
+          existente.qtdVendida += venda.qtd_vendida;
+          existente.totalVendido += venda.qtd_vendida * revista.preco_liquido;
+          mapa.set(venda.id_produto, existente);
+        }
+
+        const lista = Array.from(mapa.values()).sort(
+          (a, b) => b.qtdVendida - a.qtdVendida
+        );
+
+        setMaisVendidos(lista);
+      } catch (error) {
+        console.error("Erro ao buscar mais vendidos:", error);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    buscarProdutos();
+    carregarMaisVendidos();
   }, []);
 
   if (loading) {
     return (
-      <View style={localStyles.centered}>
-        <ActivityIndicator size="large" color="#FFA500" />
-        <Text>Carregando produtos...</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16 }}>
+        <ActivityIndicator size="large" color="#E67E22" />
+        <Text>Carregando mais vendidos...</Text>
       </View>
     );
   }
 
-  if (error) {
-    return (
-      <View style={localStyles.centered}>
-        <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>
+  const renderItem = ({ item }: { item: ItemMaisVendido }) => (
+    <View style={styles.cardContainer}>
+      <Image
+        source={
+          item.imagem
+            ? { uri: item.imagem }
+            : require("../../../assets/images/imagem-placeholder.png")
+        }
+        style={styles.cardImage}
+      />
+      <View style={styles.cardTextContainer}>
+        <Text style={styles.cardTitle}>{item.nome}</Text>
+        <Text style={styles.cardPrice}>R$ {item.totalVendido.toFixed(2)}</Text>
+        <Text style={styles.cardSales}>Qtd: {item.qtdVendida}</Text>
       </View>
-    );
-  }
+    </View>
+  );
 
   return (
-    <View>
+    <View style={{ marginTop: 16 }}>
+      {/* Título com ícone */}
       <View style={styles.titleContainer}>
-        <Feather name="trending-up" size={22} color="#333" style={{ marginRight: 8 }} />
+        <Feather name="trending-up" size={20} color="#333" />
         <Text style={styles.title}>Mais vendidos</Text>
       </View>
+
+      {/* Lista em duas colunas */}
       <FlatList
-        data={produtos}
-        renderItem={({ item }) => <CardProduto item={item} />}
-        keyExtractor={(item) => item.id}
+        data={maisVendidos}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id_revista}
         numColumns={2}
-        scrollEnabled={false}
         columnWrapperStyle={styles.row}
+        scrollEnabled={false} // para não conflitar com ScrollView da Home
         contentContainerStyle={{ paddingBottom: 16 }}
       />
     </View>
   );
-};
-
-
-// Estilos locais para centralização
-const localStyles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-});
+}

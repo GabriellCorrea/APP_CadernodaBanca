@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,39 +6,38 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
-
-const produtos = [
-  {
-    id: 1,
-    titulo: "Vogue Michael Jackson",
-    preco: 5000,
-    vendas: 140,
-    estoque: 150,
-    imagem:
-      "https://m.media-amazon.com/images/I/81vpsIs58WL._AC_UF1000,1000_QL80_.jpg",
-  },
-  {
-    id: 2,
-    titulo: "Complex Lana del Rey",
-    preco: 5000,
-    vendas: 140,
-    estoque: 100,
-    imagem:
-      "https://m.media-amazon.com/images/I/81vpsIs58WL._AC_UF1000,1000_QL80_.jpg",
-  },
-];
+import { apiService } from "@/services/api";
 
 export default function Estoque() {
   const [filtro, setFiltro] = useState("Todos");
   const [busca, setBusca] = useState("");
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const filtros = ["Todos", "À mostra", "Em estoque"];
+
+  useEffect(() => {
+    async function carregarRevistas() {
+      try {
+        setLoading(true);
+        const revistas = await apiService.getRevistas();
+        setProdutos(revistas);
+      } catch (error) {
+        console.error("❌ Erro ao buscar revistas:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarRevistas();
+  }, []);
 
   const contagemFiltros: Record<string, number> = {
     Todos: produtos.length,
@@ -53,15 +52,16 @@ export default function Estoque() {
       if (filtro === "Em estoque") return p.estoque > 0;
       return true;
     })
-    .filter((p) => p.titulo.toLowerCase().includes(busca.toLowerCase()));
+    .filter((p) =>
+      (p.titulo || p.nome || "")
+        .toLowerCase()
+        .includes(busca.toLowerCase())
+    );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <Header
-        usuario="Andreas"
-        pagina="Estoque"
-      />
+      <Header usuario="Andrea" pagina="Estoque" />
 
       {/* Conteúdo */}
       <View style={styles.container}>
@@ -75,7 +75,7 @@ export default function Estoque() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Buscar"
+            placeholder="Buscar revista..."
             placeholderTextColor="#666"
             value={busca}
             onChangeText={setBusca}
@@ -99,7 +99,7 @@ export default function Estoque() {
               <Text
                 style={[
                   styles.filtroTexto,
-                  filtro === f && { color: "#34495E" },
+                  filtro === f && { color: "#34495E", fontWeight: "bold" },
                 ]}
               >
                 {f} ({contagemFiltros[f]})
@@ -113,16 +113,32 @@ export default function Estoque() {
           contentContainerStyle={styles.produtos}
           showsVerticalScrollIndicator={false}
         >
-          {produtosFiltrados.map((p) => (
+          {loading && (
+            <View style={{ alignItems: "center", marginTop: 30 }}>
+              <ActivityIndicator size="large" color="#E67E22" />
+              <Text style={{ marginTop: 10, color: "#555" }}>
+                Carregando revistas...
+              </Text>
+            </View>
+          )}
+
+          {!loading && produtosFiltrados.length === 0 && (
+            <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
+              Nenhuma revista encontrada.
+            </Text>
+          )}
+
+          {!loading &&
+            produtosFiltrados.map((p) => (
             <CardRevista
-              key={p.id}
-              imagem={p.imagem}
-              titulo={p.titulo}
-              preco={p.preco}
-              vendas={p.vendas}
-              estoque={p.estoque}
+              key={p.id_revista}
+              imagem={p.imagem ? { uri: p.imagem } : require("../../assets/images/imagem-placeholder.png")}
+              titulo={p.nome || "Sem título"}
+              preco={p.preco_liquido || 0}
+              vendas={p.vendas || 0}
+              estoque={p.qtd_estoque || 0}
             />
-          ))}
+            ))}
         </ScrollView>
       </View>
 
@@ -137,7 +153,7 @@ export default function Estoque() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f8f8f8", // fundo padrão
+    backgroundColor: "#f8f8f8",
   },
   container: {
     flex: 1,
@@ -202,5 +218,6 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
+
 
 

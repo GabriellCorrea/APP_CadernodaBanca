@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/header";
@@ -14,6 +15,8 @@ import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+
+import { apiService } from "@/services/api";
 
 export default function Devolucoes() {
   const [produto, setProduto] = useState("");
@@ -71,7 +74,7 @@ export default function Devolucoes() {
   async function handlePickDocument() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
+        type: "application/pdf",
         copyToCacheDirectory: true,
       });
 
@@ -81,40 +84,55 @@ export default function Devolucoes() {
       }
 
       const file = result.assets[0];
+
+      if (!file.uri) {
+        console.error("❌ Arquivo sem URI!");
+        return;
+      }
+
+      console.log("✅ Arquivo selecionado:", {
+        name: file.name,
+        uri: file.uri,
+        mimeType: file.mimeType,
+        size: file.size,
+      });
+
       setArquivoSelecionado(file);
-      setShowModal(true); // abre modal de confirmação
+      setShowModal(true);
     } catch (err) {
-      console.error("Erro ao selecionar arquivo:", err);
+      console.error("❌ Erro ao selecionar arquivo:", err);
     }
   }
 
-  function confirmarArquivo() {
-    console.log("Arquivo confirmado:", arquivoSelecionado);
+  async function confirmarArquivo() {
+    if (!arquivoSelecionado) return;
+
     setShowModal(false);
-    // Aqui você pode enviar o arquivo para backend ou salvar
+    try {
+      const res = await apiService.cadastrarChamada(arquivoSelecionado);
+
+      Alert.alert("Sucesso", "Arquivo enviado com sucesso!");
+      setArquivoSelecionado(null);
+    } catch (err) {
+      console.error("Erro ao enviar arquivo:", err);
+      Alert.alert("Erro", "Não foi possível enviar o arquivo. Tente novamente.");
+    }
   }
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      {/* Header fixo */}
-      <Header
-        usuario="Andreas"
-        pagina="Devolução"
-      />
+      <Header usuario="Andrea" pagina="Devolução" />
 
-      {/* Conteúdo rolável */}
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Título Nova Devolução */}
         <View style={styles.tituloLinha}>
           <Ionicons name="refresh-circle-outline" size={22} color="#333" />
           <Text style={styles.titulo}>Nova Devolução</Text>
         </View>
 
-        {/* Formulário */}
         <View style={styles.card}>
           <Text style={styles.label}>Produto:</Text>
           <TextInput
@@ -145,7 +163,6 @@ export default function Devolucoes() {
             placeholderTextColor="#434343"
           />
 
-          {/* Botão Registrar */}
           <TouchableOpacity style={styles.botao} onPress={handleRegistrar}>
             <Ionicons name="refresh-circle-outline" size={20} color="#FFF" />
             <Text style={styles.botaoTexto}>Registrar Devolução</Text>
@@ -153,14 +170,12 @@ export default function Devolucoes() {
 
           <Text style={styles.label}>Devolução por Arquivo:</Text>
 
-          {/* Botão de adicionar arquivo */}
           <TouchableOpacity style={styles.botaoArquivo} onPress={handlePickDocument}>
             <Ionicons name="document-attach-outline" size={20} color="#FFF" />
             <Text style={styles.textoArquivo}>Adicionar Arquivo</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Últimas devoluções */}
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
@@ -168,7 +183,6 @@ export default function Devolucoes() {
           </Text>
         </View>
 
-        {/* Grid de 2 colunas */}
         <View style={styles.grid}>
           {devolucoes.map((p) => (
             <View style={styles.cardContainer} key={p.id}>
@@ -184,7 +198,6 @@ export default function Devolucoes() {
         </View>
       </ScrollView>
 
-      {/* Modal de Confirmação */}
       <Modal transparent visible={showModal} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -213,7 +226,6 @@ export default function Devolucoes() {
         </View>
       </Modal>
 
-      {/* Barra inferior */}
       <BottomNav />
     </SafeAreaView>
   );
@@ -350,6 +362,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
-
 
