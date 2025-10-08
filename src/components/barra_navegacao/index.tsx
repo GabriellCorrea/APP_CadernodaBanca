@@ -13,7 +13,7 @@ export function BottomNav() {
     { name: "Início", route: "/home", icon: "home" },
     { name: "Estoque", route: "/estoque", icon: "cube-outline" },
     { name: "Vendas", route: "/vendas", icon: "cart-outline" },
-    { name: "Devolução", route: "/devolucoes", icon: "undo-variant" },
+    { name: "Chamadas", route: "/chamadas", icon: "undo-variant" },
     { name: "Relatórios", route: "/relatorios", icon: "chart-bar" },
   ];
 

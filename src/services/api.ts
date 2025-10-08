@@ -1,11 +1,23 @@
 import axios from 'axios'
+// import fetch from 'node-fetch'
 import { supabase } from '../lib/supabase'
 
 const API_BASE_URL = 'https://andreacontrollerapi.onrender.com'
 
+// export async function cadastrarVendaPorCodigo(dados: any) {
+//   const res = await fetch('https://andreacontrollerapi.onrender.com/vendas/cadastrar-venda-por-codigo', {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: dados,
+//   })
+
+//   if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+//   return res.json()
+// }
+
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  // timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -52,7 +64,7 @@ export const apiService = {
 
   async buscarRevistaPorCodigoBarras(codigo: string) {
     const res = await api.get(`/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo)}`)
-    return toArray(res.data, 'data')
+    return res.data
   },
 
   async buscarRevistaPorEdicao(edicao: string) {
@@ -95,7 +107,7 @@ export const apiService = {
     const res = await api.post('/vendas/cadastrar-venda-por-codigo', dados)
     return res.data
   },
-
+  
   async cadastrarVendaPorId(dados: any) {
     const res = await api.post('/vendas/cadastrar-venda-por-id', dados)
     return res.data
