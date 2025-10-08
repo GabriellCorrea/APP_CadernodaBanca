@@ -18,14 +18,14 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { apiService } from "@/services/api";
 
-export default function Devolucoes() {
+export default function Chamadas() {
   const [produto, setProduto] = useState("");
   const [quantidade, setQuantidade] = useState("");
   const [motivo, setMotivo] = useState("");
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const devolucoes = [
+  const chamadas = [
     {
       id: 1,
       titulo: "Vogue Michael Jackson",
@@ -65,7 +65,7 @@ export default function Devolucoes() {
   ];
 
   function handleRegistrar() {
-    console.log("Devolução registrada:", produto, quantidade, motivo);
+    console.log("Chamadas registrada:", produto, quantidade, motivo);
     setProduto("");
     setQuantidade("");
     setMotivo("");
@@ -121,7 +121,7 @@ export default function Devolucoes() {
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina="Devolução" />
+      <Header usuario="Andrea" pagina="Chamadas" />
 
       <ScrollView
         style={styles.container}
@@ -130,7 +130,7 @@ export default function Devolucoes() {
       >
         <View style={styles.tituloLinha}>
           <Ionicons name="refresh-circle-outline" size={22} color="#333" />
-          <Text style={styles.titulo}>Nova Devolução</Text>
+          <Text style={styles.titulo}>Nova Chamada</Text>
         </View>
 
         <View style={styles.card}>
@@ -153,22 +153,22 @@ export default function Devolucoes() {
             placeholderTextColor="#434343"
           />
 
-          <Text style={styles.label}>Motivo da Devolução:</Text>
+          <Text style={styles.label}>Motivo da Chamada:</Text>
           <TextInput
             style={[styles.input, { height: 80 }]}
             value={motivo}
             onChangeText={setMotivo}
-            placeholder="Descreva o motivo da devolução"
+            placeholder="Descreva o motivo da chamada"
             multiline
             placeholderTextColor="#434343"
           />
 
           <TouchableOpacity style={styles.botao} onPress={handleRegistrar}>
             <Ionicons name="refresh-circle-outline" size={20} color="#FFF" />
-            <Text style={styles.botaoTexto}>Registrar Devolução</Text>
+            <Text style={styles.botaoTexto}>Registrar Chamada</Text>
           </TouchableOpacity>
 
-          <Text style={styles.label}>Devolução por Arquivo:</Text>
+          <Text style={styles.label}>Chamada por Arquivo:</Text>
 
           <TouchableOpacity style={styles.botaoArquivo} onPress={handlePickDocument}>
             <Ionicons name="document-attach-outline" size={20} color="#FFF" />
@@ -179,12 +179,12 @@ export default function Devolucoes() {
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            Últimas Devoluções Registradas
+            Últimas Chamadas Registradas
           </Text>
         </View>
 
         <View style={styles.grid}>
-          {devolucoes.map((p) => (
+          {chamadas.map((p) => (
             <View style={styles.cardContainer} key={p.id}>
               <CardRevista
                 imagem={p.imagem}

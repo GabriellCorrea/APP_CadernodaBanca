@@ -66,8 +66,9 @@ export default function Vendas() {
       if (!data || data.length === 0) {
         throw { response: { status: 404 } }
       }
+      console.log(data)
 
-      const produtoEncontrado = data[0]
+      const produtoEncontrado = data["data"]
       setProduto(produtoEncontrado)
       setCodigoBarras(codigo)
       console.log("✅ Produto encontrado:", produtoEncontrado)
@@ -123,7 +124,7 @@ export default function Vendas() {
       }
 
       // Chama o endpoint para cadastrar a venda
-      await apiService.cadastrarVendaPorCodigo(vendaData)
+      apiService.cadastrarVendaPorCodigo(vendaData)
 
       Alert.alert("Sucesso!", "Venda confirmada com sucesso")
       resetScanner()
