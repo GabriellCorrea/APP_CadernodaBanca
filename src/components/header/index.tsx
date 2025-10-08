@@ -4,6 +4,8 @@ import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { styles } from "./styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { LanguageSelector } from "../languageSelector";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type HeaderProps = {
   usuario: string;
@@ -11,9 +13,12 @@ type HeaderProps = {
 };
 
 export function Header({ usuario, pagina }: HeaderProps) {
+  const { t, currentLanguage } = useLanguage();
+  
   // Pega a data atual
   const hoje = new Date();
-  const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+  const locale = currentLanguage === 'pt' ? 'pt-BR' : 'it-IT';
+  const dataFormatada = hoje.toLocaleDateString(locale, {
     weekday: "long", // segunda-feira
     day: "2-digit",  // 30
     month: "long",   // setembro
@@ -31,13 +36,10 @@ export function Header({ usuario, pagina }: HeaderProps) {
         />
 
         {/* Saudação */}
-        <Text style={styles.saudacao}>Olá, {usuario}</Text>
+        <Text style={styles.saudacao}>{t('hello')}, {usuario}</Text>
 
-        {/* Bandeira */}
-        <Image
-          source={require("../../../assets/images/Flag_of_Brazil.svg.png")}
-          style={styles.image_flag}
-        />
+        {/* Seletor de idioma */}
+        <LanguageSelector />
       </View>
 
       {/* Container 2 - Data */}
