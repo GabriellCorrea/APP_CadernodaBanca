@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, FlatList, Image } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
+import { Feather } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
 import { styles } from "./styles";
 
 type Revista = {
@@ -21,6 +22,7 @@ type ItemMaisVendido = {
 };
 
 export function MaisVendidos() {
+  const { t, currentLanguage } = useLanguage();
   const [maisVendidos, setMaisVendidos] = useState<ItemMaisVendido[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +75,7 @@ export function MaisVendidos() {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16 }}>
         <ActivityIndicator size="large" color="#E67E22" />
-        <Text>Carregando mais vendidos...</Text>
+        <Text>{t('loadingTopSellers')}</Text>
       </View>
     );
   }
@@ -91,7 +93,7 @@ export function MaisVendidos() {
       <View style={styles.cardTextContainer}>
         <Text style={styles.cardTitle}>{item.nome}</Text>
         <Text style={styles.cardPrice}>R$ {item.totalVendido.toFixed(2)}</Text>
-        <Text style={styles.cardSales}>Qtd: {item.qtdVendida}</Text>
+        <Text style={styles.cardSales}>{t('qty')}: {item.qtdVendida}</Text>
       </View>
     </View>
   );
@@ -101,7 +103,7 @@ export function MaisVendidos() {
       {/* Título com ícone */}
       <View style={styles.titleContainer}>
         <Feather name="trending-up" size={20} color="#333" />
-        <Text style={styles.title}>Mais vendidos</Text>
+        <Text style={styles.title}>{t('topSellers')}</Text>
       </View>
 
       {/* Lista em duas colunas */}

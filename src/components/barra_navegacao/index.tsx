@@ -1,8 +1,7 @@
-import React from "react";
-import { View, TouchableOpacity, Text } from "react-native";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useRouter, usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
+import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { styles } from "./styles";
 
 export function BottomNav() {

@@ -1,24 +1,26 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
+import { Header } from "@/components/header";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { useState } from "react";
+import {
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { apiService } from "@/services/api";
 
 export default function Chamadas() {
+  const { t } = useLanguage();
   const [produto, setProduto] = useState("");
   const [quantidade, setQuantidade] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -111,17 +113,17 @@ export default function Chamadas() {
     try {
       const res = await apiService.cadastrarChamada(arquivoSelecionado);
 
-      Alert.alert("Sucesso", "Arquivo enviado com sucesso!");
+      Alert.alert(t('success'), t('fileUploadSuccess'));
       setArquivoSelecionado(null);
     } catch (err) {
       console.error("Erro ao enviar arquivo:", err);
-      Alert.alert("Erro", "Não foi possível enviar o arquivo. Tente novamente.");
+      Alert.alert(t('error'), t('fileUploadError'));
     }
   }
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina="Chamadas" />
+      <Header usuario="Andrea" pagina={t('returns')} />
 
       <ScrollView
         style={styles.container}
@@ -130,20 +132,20 @@ export default function Chamadas() {
       >
         <View style={styles.tituloLinha}>
           <Ionicons name="refresh-circle-outline" size={22} color="#333" />
-          <Text style={styles.titulo}>Nova Chamada</Text>
+          <Text style={styles.titulo}>{t('newReturn')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Produto:</Text>
+          <Text style={styles.label}>{t('product')}</Text>
           <TextInput
             style={styles.input}
             value={produto}
             onChangeText={setProduto}
-            placeholder="Nome do Produto"
+            placeholder={t('productName')}
             placeholderTextColor="#434343"
           />
 
-          <Text style={styles.label}>Quantidade:</Text>
+          <Text style={styles.label}>{t('quantity')}</Text>
           <TextInput
             style={styles.input}
             value={quantidade}
@@ -153,33 +155,33 @@ export default function Chamadas() {
             placeholderTextColor="#434343"
           />
 
-          <Text style={styles.label}>Motivo da Chamada:</Text>
+          <Text style={styles.label}>{t('returnReason')}</Text>
           <TextInput
             style={[styles.input, { height: 80 }]}
             value={motivo}
             onChangeText={setMotivo}
-            placeholder="Descreva o motivo da chamada"
+            placeholder={t('describeReason')}
             multiline
             placeholderTextColor="#434343"
           />
 
           <TouchableOpacity style={styles.botao} onPress={handleRegistrar}>
             <Ionicons name="refresh-circle-outline" size={20} color="#FFF" />
-            <Text style={styles.botaoTexto}>Registrar Chamada</Text>
+            <Text style={styles.botaoTexto}>{t('registerReturn')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.label}>Chamada por Arquivo:</Text>
+          <Text style={styles.label}>{t('returnByFile')}</Text>
 
           <TouchableOpacity style={styles.botaoArquivo} onPress={handlePickDocument}>
             <Ionicons name="document-attach-outline" size={20} color="#FFF" />
-            <Text style={styles.textoArquivo}>Adicionar Arquivo</Text>
+            <Text style={styles.textoArquivo}>{t('addFile')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            Últimas Chamadas Registradas
+            {t('lastRegisteredReturns')}
           </Text>
         </View>
 
@@ -202,7 +204,7 @@ export default function Chamadas() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Ionicons name="document-attach-outline" size={40} color="#34495E" />
-            <Text style={styles.modalTitulo}>Confirmar Arquivo</Text>
+            <Text style={styles.modalTitulo}>{t('confirmFile')}</Text>
             {arquivoSelecionado && (
               <Text style={styles.modalTexto}>{arquivoSelecionado.name}</Text>
             )}
@@ -212,14 +214,14 @@ export default function Chamadas() {
                 style={[styles.modalBotao, { backgroundColor: "#ccc" }]}
                 onPress={() => setShowModal(false)}
               >
-                <Text style={styles.modalBotaoTexto}>Cancelar</Text>
+                <Text style={styles.modalBotaoTexto}>{t('cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalBotao, { backgroundColor: "#E53935" }]}
                 onPress={confirmarArquivo}
               >
-                <Text style={styles.modalBotaoTexto}>Confirmar</Text>
+                <Text style={styles.modalBotaoTexto}>{t('confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>

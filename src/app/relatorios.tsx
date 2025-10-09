@@ -1,17 +1,19 @@
-import { Header } from "@/components/header"
-import { BottomNav } from "@/components/barra_navegacao"
-import { Ionicons } from "@expo/vector-icons"
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from "react-native"
+import { BottomNav } from "@/components/barra_navegacao";
+import { Header } from "@/components/header";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Relatorios() {
+  const { t } = useLanguage();
+  
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <Header 
         usuario="Andreas" 
-        pagina="Relatórios e Insights" 
+        pagina={t('reportsAndInsights')} 
       />
 
       {/* Conteúdo rolável */}
@@ -24,20 +26,20 @@ export default function Relatorios() {
         <View style={styles.metricsRow}>
           <View style={styles.metricCard}>
             <Ionicons name="cash-outline" size={24} color="#fff" />
-            <Text style={styles.metricLabel}>Vendas Hoje</Text>
+            <Text style={styles.metricLabel}>{t('salesToday')}</Text>
             <Text style={styles.metricValue}>R$ 285,60</Text>
           </View>
 
           <View style={styles.metricCard}>
             <Ionicons name="cube-outline" size={24} color="#fff" />
-            <Text style={styles.metricLabel}>Produtos</Text>
+            <Text style={styles.metricLabel}>{t('products')}</Text>
             <Text style={styles.metricValue}>4</Text>
           </View>
         </View>
 
         {/* Vendas da semana */}
-        <Text style={styles.sectionTitle}>Vendas da semana</Text>
-        {["seg", "ter", "qua", "qui", "sex", "sab", "dom"].map((dia, index) => (
+        <Text style={styles.sectionTitle}>{t('weekSales')}</Text>
+        {[t('monAbbr'), t('tueAbbr'), t('wedAbbr'), t('thuAbbr'), t('friAbbr'), t('satAbbr'), t('sunAbbr')].map((dia, index) => (
           <View key={index} style={styles.weekRow}>
             <Text style={styles.weekDay}>{dia}</Text>
             <View style={styles.progressBar}>
@@ -46,14 +48,14 @@ export default function Relatorios() {
             <Text style={styles.weekValue}>R$ 100,00</Text>
           </View>
         ))}
-        <Text style={styles.ticket}>Ticket médio <Text style={{ fontWeight: "bold" }}>R$ 17.85</Text></Text>
+        <Text style={styles.ticket}>{t('averageTicket')} <Text style={{ fontWeight: "bold" }}>R$ 17.85</Text></Text>
 
         {/* Mais vendidos */}
-        <Text style={styles.sectionTitle}>Mais vendidos</Text>
+        <Text style={styles.sectionTitle}>{t('topSellers')}</Text>
         {[
-          { titulo: "Revista Coletânea 108", vendas: "15 vendas", valor: "R$ 190,00" },
-          { titulo: "Revista Coquetel Sudoku", vendas: "10 vendas", valor: "R$ 80,00" },
-          { titulo: "Revista manga Henshin", vendas: "8 vendas", valor: "R$ 125,00" },
+          { titulo: "Revista Coletânea 108", vendas: `15 ${t('sales')}`, valor: "R$ 190,00" },
+          { titulo: "Revista Coquetel Sudoku", vendas: `10 ${t('sales')}`, valor: "R$ 80,00" },
+          { titulo: "Revista manga Henshin", vendas: `8 ${t('sales')}`, valor: "R$ 125,00" },
         ].map((item, index) => (
           <View key={index} style={styles.itemRow}>
             <View style={styles.itemCircle}>

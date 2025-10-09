@@ -1,20 +1,23 @@
 import { BottomNav } from "@/components/barra_navegacao"
 import { Header } from "@/components/header"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { apiService } from "@/services/api"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera"
 import { router } from "expo-router"
 import { useEffect, useState } from "react"
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, TouchableOpacity } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function Vendas() {
+  const { t } = useLanguage();
   const [facing, setFacing] = useState<CameraType>("back")
   const [codigoBarras, setCodigoBarras] = useState<string | null>(null)
   const [produto, setProduto] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [scanned, setScanned] = useState(false)
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
+  const [lastScanTime, setLastScanTime] = useState<number>(0)
   const [permission, requestPermission] = useCameraPermissions()
 
   // Verifica autenticação quando entra na tela
@@ -30,9 +33,9 @@ export default function Vendas() {
 
         if (!token) {
           Alert.alert(
-            "Acesso negado",
-            "Você precisa fazer login para acessar o scanner de produtos",
-            [{ text: "OK", onPress: () => router.push("/") }]
+            t('accessDenied'),
+            t('loginRequired'),
+            [{ text: t('ok'), onPress: () => router.push("/") }]
           )
           return
         }
@@ -53,39 +56,78 @@ export default function Vendas() {
 
   // Busca produto pelo código de barras
   const buscarProduto = async (codigo: string) => {
+    const agora = Date.now()
+    
+    // Evita scans muito frequentes (debounce de 2 segundos)
+    if (agora - lastScanTime < 2000) {
+      console.log('🚫 Scan muito rápido, ignorando')
+      return
+    }
+    
     if (scanned || loading || codigo === lastScannedCode) return
 
+    // Evita códigos muito curtos ou inválidos
+    if (!codigo || codigo.length < 8) {
+      console.log('🚫 Código muito curto, ignorando:', codigo)
+      return
+    }
+
+    setLastScanTime(agora)
     setScanned(true)
     setLoading(true)
     setLastScannedCode(codigo)
 
     try {
       console.log("📦 Código escaneado:", codigo)
+      
+      // Validação básica do código antes de enviar
+      if (!codigo || codigo.length < 3) {
+        throw new Error('Código de barras muito curto ou inválido')
+      }
+      
       const data = await apiService.buscarRevistaPorCodigoBarras(codigo)
 
-      if (!data || data.length === 0) {
+      if (!data) {
         throw { response: { status: 404 } }
       }
-      console.log(data)
+      console.log('🔍 Resposta completa da API:', data)
 
-      const produtoEncontrado = data["data"]
+      // Verifica se tem dados válidos na resposta
+      const produtoEncontrado = data["data"] || data
+      if (!produtoEncontrado) {
+        throw { response: { status: 404 } }
+      }
+      
       setProduto(produtoEncontrado)
       setCodigoBarras(codigo)
       console.log("✅ Produto encontrado:", produtoEncontrado)
+      console.log("💰 Preço do produto:", produtoEncontrado?.preco_capa)
 
       // Libera novo scan após um tempo
       setTimeout(() => setScanned(false), 1000)
     } catch (error: any) {
-      console.error('Erro ao buscar produto:', error)
+      console.error('❌ ERRO na busca do produto:', error.message || error)
+      if (error.response) {
+        console.error('📄 Status do erro:', error.response.status)
+        console.error('📄 Dados do erro:', error.response.data)
+        console.error('📄 URL que falhou:', error.config?.url)
+      }
+      
       setProduto(null)
       setCodigoBarras(null)
 
-      let mensagem = "Produto não encontrado"
-      if (error.response?.status === 403) mensagem = "Erro de autenticação. Faça login novamente."
-      else if (error.response?.status === 404) mensagem = "Produto não cadastrado no sistema"
-      else if (error.response?.status >= 500) mensagem = "Erro no servidor. Tente novamente."
+      let mensagem = t('productNotFound')
+      if (error.response?.status === 403) {
+        mensagem = t('authError')
+      } else if (error.response?.status === 404) {
+        mensagem = t('productNotRegistered')
+      } else if (error.response?.status >= 500) {
+        mensagem = `${t('serverError')} (Erro na busca do produto)`
+      } else if (error.message) {
+        mensagem = error.message
+      }
 
-      Alert.alert("Erro", mensagem)
+      Alert.alert(t('error'), mensagem)
 
       setTimeout(() => {
         setScanned(false)
@@ -103,34 +145,70 @@ export default function Vendas() {
     setScanned(false)
     setLoading(false)
     setLastScannedCode(null)
+    setLastScanTime(0)
   }
 
   // Confirma venda
   const handleConfirmarVenda = async () => {
     if (!produto || !codigoBarras) {
-      Alert.alert("Erro", "Escaneie um produto primeiro")
+      Alert.alert(t('error'), t('scanProductFirst'))
       return
     }
 
     setLoading(true)
     try {
+      // Tenta diferentes campos de preço que podem existir no produto
+      const preco = produto.preco_capa || produto.preco_liquido || produto.preco || 0
+      const precoNumerico = parseFloat(preco.toString()) || 0
+      
+      // Gera data no formato mais simples
+      const agora = new Date()
+      const dataFormatada = agora.toISOString().split('T')[0] // YYYY-MM-DD
+      
       const vendaData = {
         metodo_pagamento: 'Débito',
-        codigo_barras: codigoBarras,
+        codigo_barras: codigoBarras.toString().trim(),
         qtd_vendida: 1,
-        desconto_aplicado: 0.0,
-        valor_total: parseFloat(produto.preco_capa || 0),
-        data_venda: new Date().toISOString(),
+        desconto_aplicado: 0,
+        valor_total: precoNumerico,
+        data_venda: dataFormatada,
+      }
+
+      console.log('📦 Dados da venda a serem enviados:', vendaData)
+      console.log('📦 Produto encontrado:', produto)
+
+      // Validação rigorosa dos dados antes de enviar
+      if (!vendaData.codigo_barras || vendaData.codigo_barras.length < 3) {
+        throw new Error('Código de barras inválido')
+      }
+      if (!vendaData.valor_total || vendaData.valor_total <= 0 || isNaN(vendaData.valor_total)) {
+        throw new Error(`Valor do produto inválido: ${vendaData.valor_total}`)
+      }
+      if (!vendaData.data_venda) {
+        throw new Error('Data da venda não informada')
       }
 
       // Chama o endpoint para cadastrar a venda
-      apiService.cadastrarVendaPorCodigo(vendaData)
+      await apiService.cadastrarVendaPorCodigo(vendaData)
 
-      Alert.alert("Sucesso!", "Venda confirmada com sucesso")
+      Alert.alert(t('success'), t('saleConfirmed'))
       resetScanner()
-    } catch (error) {
-      console.error('Erro ao confirmar venda:', error)
-      Alert.alert("Erro", "Não foi possível confirmar a venda")
+    } catch (error: any) {
+      console.error('❌ Erro ao confirmar venda:', error)
+      
+      let mensagemErro = t('saleError')
+      if (error.response) {
+        console.error('📄 Resposta do servidor:', error.response.data)
+        console.error('📄 Status:', error.response.status)
+        
+        if (error.response.status === 500) {
+          mensagemErro = 'Erro interno do servidor. Tente novamente.'
+        } else if (error.response.status === 400) {
+          mensagemErro = 'Dados inválidos. Verifique as informações.'
+        }
+      }
+      
+      Alert.alert(t('error'), mensagemErro)
     } finally {
       setLoading(false)
     }
@@ -143,9 +221,9 @@ export default function Vendas() {
     return (
       <SafeAreaView style={styles.wrapper}>
         <View style={styles.container}>
-          <Text style={{ textAlign: "center" }}>Precisamos da permissão para usar a câmera</Text>
+          <Text style={{ textAlign: "center" }}>{t('cameraPermissionNeeded')}</Text>
           <Pressable onPress={requestPermission} style={styles.botao}>
-            <Text style={styles.botaoTexto}>Permitir</Text>
+            <Text style={styles.botaoTexto}>{t('allow')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -155,7 +233,7 @@ export default function Vendas() {
   // Render principal
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina="Vendas" />
+      <Header usuario="Andrea" pagina={t('salesPage')} />
 
       <ScrollView
         style={styles.scrollContainer}
@@ -179,7 +257,7 @@ export default function Vendas() {
             {!produto && !loading && (
               <View style={styles.statusInfo}>
                 <Text style={styles.statusTexto}>
-                  {scanned ? "Aguardando..." : "Escaneie um código de barras"}
+                  {scanned ? t('waiting') : t('scanBarcode')}
                 </Text>
               </View>
             )}
@@ -187,7 +265,7 @@ export default function Vendas() {
             {loading && (
               <View style={styles.statusInfo}>
                 <ActivityIndicator size="large" color="#E67E22" />
-                <Text style={styles.statusTexto}>Buscando produto...</Text>
+                <Text style={styles.statusTexto}>{t('searchingProduct')}</Text>
               </View>
             )}
 
@@ -197,29 +275,29 @@ export default function Vendas() {
                 <Text style={styles.produtoPreco}>
                   R$ {parseFloat(produto.preco_capa || 0).toFixed(2)}
                 </Text>
-                <Text style={styles.codigoBarras}>Código: {codigoBarras}</Text>
+                <Text style={styles.codigoBarras}>{t('code')}: {codigoBarras}</Text>
               </View>
             )}
 
             {/* Botões */}
             <View style={styles.botoesContainer}>
-              <Pressable
-                style={[styles.botao, (!produto || loading) && styles.botaoDisabled]}
+              <TouchableOpacity
+                style={[styles.fixedRegistrarVendaBtn, styles.botoesBox, (!produto || loading) && styles.botaoDisabled]}
                 onPress={handleConfirmarVenda}
                 disabled={loading || !produto}
               >
-                <Text style={styles.botaoTexto}>
-                  {loading ? "Processando..." : "Confirmar venda"}
+                <Text style={styles.fixedRegistrarVendaBtnText}>
+                  {loading ? t('processing') : t('confirmSale')}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
 
-              <Pressable
-                style={styles.botaoSecundario}
+              <TouchableOpacity
+                style={[styles.fixedRegistrarVendaBtn, styles.botoesBox]}
                 onPress={resetScanner}
                 disabled={loading}
               >
-                <Text style={styles.botaoSecundarioTexto}>Novo scan</Text>
-              </Pressable>
+                <Text style={styles.fixedRegistrarVendaBtnText}>{t('newScan')}</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -231,6 +309,30 @@ export default function Vendas() {
 }
 
 const styles = StyleSheet.create({
+  botoesBox: {
+    flex: 1,
+    marginHorizontal: 2,
+    minWidth: 120,
+    maxWidth: 200,
+  },
+  fixedRegistrarVendaBtn: {
+    backgroundColor: "#FF9800",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    marginHorizontal: 2,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  fixedRegistrarVendaBtnText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   wrapper: {
     flex: 1,
     backgroundColor: "#F8F8F8",

@@ -17,7 +17,7 @@ const API_BASE_URL = 'https://andreacontrollerapi.onrender.com'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  // timeout: 15000,
+  timeout: 10000, // 10 segundos de timeout
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -25,6 +25,8 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
+
+  console.log('🔐 Token de autenticação:', token ? `${token.substring(0, 20)}...` : 'Nenhum')
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -34,8 +36,21 @@ api.interceptors.request.use(async (config) => {
 })
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    console.log('✅ Resposta HTTP:', res.status, res.config?.url)
+    return res
+  },
   (err) => {
+    console.error('❌ Erro HTTP detalhado:')
+    console.error('  - Status:', err.response?.status)
+    console.error('  - URL:', err.config?.url)
+    console.error('  - Dados:', err.response?.data)
+    console.error('  - Mensagem:', err.message)
+    
+    if (err.code === 'ECONNABORTED') {
+      console.error('⏰ Timeout da requisição')
+    }
+    
     throw err
   }
 )
@@ -63,7 +78,16 @@ export const apiService = {
   },
 
   async buscarRevistaPorCodigoBarras(codigo: string) {
-    const res = await api.get(`/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo)}`)
+    if (!codigo || codigo.length < 8) {
+      throw new Error('Código de barras inválido ou muito curto')
+    }
+    
+    console.log('🔍 Buscando produto com código:', codigo)
+    const url = `/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo.trim())}`
+    console.log('🌐 URL da busca:', `${API_BASE_URL}${url}`)
+    
+    const res = await api.get(url)
+    console.log('📦 Resposta da busca:', res.data)
     return res.data
   },
 
@@ -104,7 +128,11 @@ export const apiService = {
   },
 
   async cadastrarVendaPorCodigo(dados: any) {
+    console.log('🚀 Enviando dados para API:', dados)
+    console.log('🌐 URL:', `${API_BASE_URL}/vendas/cadastrar-venda-por-codigo`)
+    
     const res = await api.post('/vendas/cadastrar-venda-por-codigo', dados)
+    console.log('✅ Resposta da API:', res.data)
     return res.data
   },
   

@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, Feather } from "@expo/vector-icons";
-import { Header } from "@/components/header";
 import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
+import { Header } from "@/components/header";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Estoque() {
+  const { t } = useLanguage();
   const [filtro, setFiltro] = useState("Todos");
   const [busca, setBusca] = useState("");
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -39,6 +41,15 @@ export default function Estoque() {
     carregarRevistas();
   }, []);
 
+  const getFilterLabel = (filter: string) => {
+    switch (filter) {
+      case "Todos": return t('all');
+      case "À mostra": return t('onDisplay');
+      case "Em estoque": return t('inStock');
+      default: return filter;
+    }
+  };
+
   const contagemFiltros: Record<string, number> = {
     Todos: produtos.length,
     "À mostra": produtos.filter((p) => p.estoque <= 10).length,
@@ -61,7 +72,7 @@ export default function Estoque() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <Header usuario="Andrea" pagina="Estoque" />
+      <Header usuario="Andrea" pagina={t('stock')} />
 
       {/* Conteúdo */}
       <View style={styles.container}>
@@ -75,7 +86,7 @@ export default function Estoque() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Buscar revista..."
+            placeholder={t('searchMagazine')}
             placeholderTextColor="#666"
             value={busca}
             onChangeText={setBusca}
@@ -85,7 +96,7 @@ export default function Estoque() {
         {/* Título Filtros */}
         <View style={styles.filtrosTitulo}>
           <Feather name="filter" size={16} color="#1E2A38" />
-          <Text style={styles.filtrosTexto}>Filtros</Text>
+          <Text style={styles.filtrosTexto}>{t('filters')}</Text>
         </View>
 
         {/* Botões de Filtro */}
@@ -102,7 +113,7 @@ export default function Estoque() {
                   filtro === f && { color: "#34495E", fontWeight: "bold" },
                 ]}
               >
-                {f} ({contagemFiltros[f]})
+                {getFilterLabel(f)} ({contagemFiltros[f]})
               </Text>
             </TouchableOpacity>
           ))}
@@ -117,14 +128,14 @@ export default function Estoque() {
             <View style={{ alignItems: "center", marginTop: 30 }}>
               <ActivityIndicator size="large" color="#E67E22" />
               <Text style={{ marginTop: 10, color: "#555" }}>
-                Carregando revistas...
+                {t('loadingMagazines')}
               </Text>
             </View>
           )}
 
           {!loading && produtosFiltrados.length === 0 && (
             <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
-              Nenhuma revista encontrada.
+              {t('noMagazineFound')}
             </Text>
           )}
 
