@@ -10,6 +10,8 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    marginTop: -9,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -21,8 +23,8 @@ export const styles = StyleSheet.create({
   },
 
   flagImage: {
-    width: 24,
-    height: 18,
+    width: 45,
+    height: 30,
     borderRadius: 2,
     marginRight: 4,
   },
