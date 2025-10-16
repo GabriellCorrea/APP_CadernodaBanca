@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Image } from "expo-image";
+import { useState } from "react";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { styles } from "./styles";
 
 type Language = {
-  code: 'pt' | 'it';
+  code: 'pt' | 'it' | 'en';
   name: string;
   flag?: any; // Para require() de imagens
   emoji?: string; // Para emojis de bandeira
@@ -22,6 +22,11 @@ const languages: Language[] = [
     code: 'it',
     name: 'Italiano',
     flag: require("../../../assets/images/bandeira-italia.png")
+  },
+  {
+    code: 'en',
+    name: 'English',
+    flag: require("../../../assets/images/bandeira-eua.png")
   }
 ];
 
@@ -31,7 +36,7 @@ export function LanguageSelector() {
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage) || languages[0];
 
-  const handleLanguageSelect = (languageCode: 'pt' | 'it') => {
+  const handleLanguageSelect = (languageCode: 'pt' | 'it' | 'en') => {
     changeLanguage(languageCode);
     setModalVisible(false);
   };

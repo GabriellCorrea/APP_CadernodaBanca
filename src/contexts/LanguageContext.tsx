@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 
-export type LanguageCode = 'pt' | 'it';
+export type LanguageCode = 'pt' | 'it' | 'en';
 
 export interface LanguageContextData {
   currentLanguage: LanguageCode;
@@ -98,6 +98,16 @@ const translations = {
     units: 'un.',
     qty: 'Qtd',
     
+    // Métodos de pagamento
+    paymentMethodTitle: 'Método de Pagamento',
+    paymentMethod: 'Selecione a forma de pagamento',
+    paymentMethodLabel: 'Forma de pagamento',
+    paymentWarning: 'Selecione a forma de pagamento antes de confirmar.',
+    debit: 'Débito',
+    credit: 'Crédito',
+    pix: 'Pix',
+    cash: 'Dinheiro',
+    
     // Dias da semana
     monday: 'segunda-feira',
     tuesday: 'terça-feira',
@@ -149,7 +159,7 @@ const translations = {
     reports: 'Rapporti',
     
     // Páginas
-    reportsAndInsights: 'Rapporti e Approfondimenti',
+    reportsAndInsights: 'Rapporti e Statistiche',
     
     // Estoque
     searchMagazine: 'Cerca rivista...',
@@ -214,6 +224,16 @@ const translations = {
     units: 'pz.',
     qty: 'Qtà',
     
+    // Métodos de pagamento
+    paymentMethodTitle: 'Metodo di Pagamento',
+    paymentMethod: 'Seleziona il metodo di pagamento',
+    paymentMethodLabel: 'Forma di pagamento',
+    paymentWarning: 'Seleziona il metodo di pagamento prima di confermare.',
+    debit: 'Debito',
+    credit: 'Credito',
+    pix: 'Pix',
+    cash: 'Contanti',
+    
     // Dias da semana
     monday: 'lunedì',
     tuesday: 'martedì',
@@ -245,6 +265,132 @@ const translations = {
     october: 'ottobre',
     november: 'novembre',
     december: 'dicembre',
+  },
+  en: {
+    // Header
+    hello: 'Hello',
+    
+    // Tela inicial
+    dailyGoal: 'Daily Goal',
+    progress: 'Progress',
+    topSellers: 'Top Sellers',
+    start: 'Home',
+    registerSale: '+ Register Sale',
+    
+    // Navegação
+    home: 'Home',
+    stock: 'Stock',
+    salesPage: 'Sales',
+    returns: 'Returns',
+    reports: 'Reports',
+    
+    // Páginas
+    reportsAndInsights: 'Reports and Analytics',
+    
+    // Estoque
+    searchMagazine: 'Search magazine...',
+    filters: 'Filters',
+    all: 'All',
+    onDisplay: 'On Display',
+    inStock: 'In Stock',
+    loadingMagazines: 'Loading magazines...',
+    noMagazineFound: 'No magazine found.',
+    
+    // Vendas
+    cameraPermissionNeeded: 'We need camera permission',
+    allow: 'Allow',
+    scanBarcode: 'Scan a barcode',
+    waiting: 'Waiting...',
+    searchingProduct: 'Searching product...',
+    confirmSale: 'Confirm sale',
+    processing: 'Processing...',
+    newScan: 'New scan',
+    code: 'Code',
+    accessDenied: 'Access denied',
+    loginRequired: 'You need to login to access the product scanner',
+    ok: 'OK',
+    error: 'Error',
+    productNotFound: 'Product not found',
+    authError: 'Authentication error. Please login again.',
+    productNotRegistered: 'Product not registered in the system',
+    serverError: 'Server error. Please try again.',
+    scanProductFirst: 'Scan a product first',
+    success: 'Success!',
+    saleConfirmed: 'Sale confirmed successfully',
+    saleError: 'Could not confirm the sale',
+    
+    // Chamadas
+    newReturn: 'New Return',
+    product: 'Product:',
+    productName: 'Product Name',
+    quantity: 'Quantity:',
+    returnReason: 'Return Reason:',
+    describeReason: 'Describe the return reason',
+    registerReturn: 'Register Return',
+    returnByFile: 'Return by File:',
+    addFile: 'Add File',
+    lastRegisteredReturns: 'Last Registered Returns',
+    confirmFile: 'Confirm File',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    fileUploadSuccess: 'File uploaded successfully!',
+    fileUploadError: 'Could not upload file. Please try again.',
+    
+    // Mais vendidos
+    loadingTopSellers: 'Loading top sellers...',
+    
+    // Relatórios
+    salesToday: 'Sales Today',
+    products: 'Products',
+    weekSales: 'Week Sales',
+    averageTicket: 'Average Ticket',
+    sales: 'sales',
+    
+    // Geral
+    units: 'pcs.',
+    qty: 'Qty',
+    
+    // Métodos de pagamento
+    paymentMethodTitle: 'Payment Method',
+    paymentMethod: 'Select payment method',
+    paymentMethodLabel: 'Payment method',
+    paymentWarning: 'Select payment method before confirming.',
+    debit: 'Debit',
+    credit: 'Credit',
+    pix: 'Pix',
+    cash: 'Cash',
+    
+    // Dias da semana
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday',
+    
+    // Abreviações dos dias da semana
+    monAbbr: 'Mon',
+    tueAbbr: 'Tue',
+    wedAbbr: 'Wed',
+    thuAbbr: 'Thu',
+    friAbbr: 'Fri',
+    satAbbr: 'Sat',
+    sunAbbr: 'Sun',
+    
+    // Meses
+    january: 'January',
+    february: 'February',
+    march: 'March',
+    april: 'April',
+    may: 'May',
+    june: 'June',
+    july: 'July',
+    august: 'August',
+    september: 'September',
+    october: 'October',
+    november: 'November',
+    december: 'December',
   },
 };
 

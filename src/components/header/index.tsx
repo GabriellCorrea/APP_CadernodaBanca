@@ -1,11 +1,10 @@
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text } from "react-native";
 import { Image } from "expo-image";
-import { styles } from "./styles";
+import { Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { LanguageSelector } from "../languageSelector";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { LanguageSelector } from "../languageSelector";
+import { styles } from "./styles";
 
 type HeaderProps = {
   usuario: string;
@@ -17,8 +16,15 @@ export function Header({ usuario, pagina }: HeaderProps) {
   
   // Pega a data atual
   const hoje = new Date();
-  const locale = currentLanguage === 'pt' ? 'pt-BR' : 'it-IT';
-  const dataFormatada = hoje.toLocaleDateString(locale, {
+  const getLocale = () => {
+    switch(currentLanguage) {
+      case 'pt': return 'pt-BR';
+      case 'it': return 'it-IT';
+      case 'en': return 'en-US';
+      default: return 'pt-BR';
+    }
+  };
+  const dataFormatada = hoje.toLocaleDateString(getLocale(), {
     weekday: "long", // segunda-feira
     day: "2-digit",  // 30
     month: "long",   // setembro

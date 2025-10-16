@@ -11,11 +11,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
-  const dadosDaMeta = {
-    progresso: 47.72,
-    valorAtual: 285.70,
-    valorMeta: 600.00,
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -30,11 +25,7 @@ export default function Home() {
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollContentContainer}
       >
-        <MetaDoDia 
-          progresso={dadosDaMeta.progresso}
-          valorAtual={dadosDaMeta.valorAtual}
-          valorMeta={dadosDaMeta.valorMeta}
-        />
+        <MetaDoDia />
         <MaisVendidos />
 
      
