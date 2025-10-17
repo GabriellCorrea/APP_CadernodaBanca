@@ -14,13 +14,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
-  TouchableOpacity
+  TouchableOpacity,
+  View
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function Vendas() {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
+  
+  // Debug das traduções
+  console.log('🌐 Idioma atual:', currentLanguage);
+  console.log('🔧 Tradução debit:', t('debit'));
+  console.log('🔧 Tradução credit:', t('credit'));
   const [facing, setFacing] = useState<CameraType>("back")
   const [codigoBarras, setCodigoBarras] = useState<string | null>(null)
   const [produto, setProduto] = useState<any>(null)
@@ -30,9 +35,11 @@ export default function Vendas() {
   const [lastScanTime, setLastScanTime] = useState<number>(0)
   const [permission, requestPermission] = useCameraPermissions()
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
+  const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null) // Chave padronizada para API
   const [showPaymentTab, setShowPaymentTab] = useState(false)
+  const [apiOnline, setApiOnline] = useState(true) // Status da API
 
-  // Verifica autenticação quando entra na tela
+  // Verifica autenticação e status da API quando entra na tela
   useEffect(() => {
     const checkAuth = async () => {
       setProduto(null)
@@ -51,16 +58,46 @@ export default function Vendas() {
           return
         }
 
+        // Verificar conectividade da API
+        console.log('🔍 Verificando conectividade da API...')
         await apiService.ping()
+        setApiOnline(true)
+        console.log('✅ API online')
 
       } catch (error) {
+        console.error('❌ Erro na verificação da API:', error)
+        setApiOnline(false)
+        
         const token = await AsyncStorage.getItem('access_token')
-        if (!token) router.push("/")
+        if (!token) {
+          router.push("/")
+        } else {
+          // API offline mas token válido, continuar em modo offline
+          console.log('⚠️ Continuando em modo offline')
+        }
       }
     }
 
     checkAuth()
-  }, [])
+
+    // Verificar API a cada 30 segundos
+    const interval = setInterval(async () => {
+      try {
+        await apiService.ping()
+        if (!apiOnline) {
+          setApiOnline(true)
+          console.log('✅ API voltou online')
+        }
+      } catch (error) {
+        if (apiOnline) {
+          setApiOnline(false)
+          console.log('❌ API ficou offline')
+        }
+      }
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [apiOnline])
 
   // Busca produto pelo código de barras
   const buscarProduto = async (codigo: string) => {
@@ -68,17 +105,37 @@ export default function Vendas() {
     
     if (agora - lastScanTime < 2000) return
     if (scanned || loading || codigo === lastScannedCode) return
-    if (!codigo || codigo.length < 8) return
+    
+    // Validação e sanitização do código
+    if (!codigo || typeof codigo !== 'string') return
+    
+    // Filtrar URLs do Expo e códigos inválidos
+    const codigoLimpo = codigo.trim()
+    if (codigoLimpo.includes('://') || codigoLimpo.includes('exp://')) {
+      console.log('🚫 Código inválido ignorado (URL):', codigoLimpo)
+      return
+    }
+    
+    if (codigoLimpo.length < 8 || codigoLimpo.length > 18) {
+      console.log('🚫 Código com tamanho inválido:', codigoLimpo.length)
+      return
+    }
+
+    // Verificar se é apenas números (códigos de barras válidos)
+    if (!/^\d+$/.test(codigoLimpo)) {
+      console.log('🚫 Código não numérico ignorado:', codigoLimpo)
+      return
+    }
 
     setLastScanTime(agora)
     setScanned(true)
     setLoading(true)
-    setLastScannedCode(codigo)
+    setLastScannedCode(codigoLimpo)
 
-    try {
-      if (!codigo || codigo.length < 3) throw new Error('Código de barras muito curto ou inválido')
-      
-      const data = await apiService.buscarRevistaPorCodigoBarras(codigo)
+    console.log('🔍 Buscando produto válido:', codigoLimpo)
+
+    try {      
+      const data = await apiService.buscarRevistaPorCodigoBarras(codigoLimpo)
 
       if (!data) throw { response: { status: 404 } }
 
@@ -86,31 +143,80 @@ export default function Vendas() {
       if (!produtoEncontrado) throw { response: { status: 404 } }
       
       setProduto(produtoEncontrado)
-      setCodigoBarras(codigo)
+      setCodigoBarras(codigoLimpo)
       setShowPaymentTab(true)
 
       setTimeout(() => setScanned(false), 1000)
     } catch (error: any) {
+      console.error('❌ Erro na busca de produto:', {
+        codigo: codigoLimpo,
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      })
+
       setProduto(null)
       setCodigoBarras(null)
 
       let mensagem = t('productNotFound')
+      let titulo = t('error')
+      let showRetry = true
+      
+      // Tratamento específico por tipo de erro
       if (error.response?.status === 403) {
         mensagem = t('authError')
+        titulo = 'Erro de Autenticação'
+        showRetry = false
       } else if (error.response?.status === 404) {
         mensagem = t('productNotRegistered')
+        titulo = 'Produto Não Encontrado'
+        showRetry = false
       } else if (error.response?.status >= 500) {
-        mensagem = `${t('serverError')} (Erro na busca do produto)`
+        mensagem = 'Servidor temporariamente indisponível. Tente novamente em alguns segundos.'
+        titulo = 'Problema no Servidor'
+        setApiOnline(false)
+      } else if (error.code === 'ECONNABORTED') {
+        mensagem = 'Conexão muito lenta. Verifique sua internet e tente novamente.'
+        titulo = 'Timeout'
+      } else if (error.message?.includes('ConnectionTerminated')) {
+        mensagem = 'Problema na conexão com o banco de dados. Tente novamente.'
+        titulo = 'Erro de Conexão'
+      } else if (!error.response) {
+        mensagem = 'Sem conexão com a internet. Verifique sua rede.'
+        titulo = 'Sem Conexão'
+        setApiOnline(false)
       } else if (error.message) {
         mensagem = error.message
       }
 
-      Alert.alert(t('error'), mensagem)
+      const buttons = []
+      if (showRetry) {
+        buttons.push({
+          text: 'Tentar Novamente',
+          onPress: () => {
+            setTimeout(() => {
+              setScanned(false)
+              setLastScannedCode(null)
+              buscarProduto(codigoLimpo)
+            }, 1000)
+          }
+        })
+      }
+      buttons.push({
+        text: 'Cancelar',
+        style: 'cancel' as const,
+        onPress: () => {
+          setScanned(false)
+          setLastScannedCode(null)
+        }
+      })
+
+      Alert.alert(titulo, mensagem, buttons)
 
       setTimeout(() => {
         setScanned(false)
         setLastScannedCode(null)
-      }, 2000)
+      }, 5000)
     } finally {
       setLoading(false)
     }
@@ -125,6 +231,7 @@ export default function Vendas() {
     setLastScannedCode(null)
     setLastScanTime(0)
     setPaymentMethod(null)
+    setPaymentMethodKey(null)
     setShowPaymentTab(false)
   }
 
@@ -135,8 +242,8 @@ export default function Vendas() {
       return
     }
 
-    if (!paymentMethod) {
-      Alert.alert('Atenção', 'Selecione a forma de pagamento antes de confirmar.')
+    if (!paymentMethod || !paymentMethodKey) {
+      Alert.alert(t('error'), t('paymentWarning'))
       setShowPaymentTab(true)
       return
     }
@@ -149,8 +256,9 @@ export default function Vendas() {
       const agora = new Date()
       const dataFormatada = agora.toISOString().split('T')[0]
       
+      // Validação mais rigorosa dos dados
       const vendaData = {
-        metodo_pagamento: paymentMethod,
+        metodo_pagamento: paymentMethodKey, // Usa a chave padronizada em vez da tradução
         codigo_barras: codigoBarras.toString().trim(),
         qtd_vendida: 1,
         desconto_aplicado: 0,
@@ -158,32 +266,172 @@ export default function Vendas() {
         data_venda: dataFormatada,
       }
 
-      if (!vendaData.codigo_barras || vendaData.codigo_barras.length < 3) throw new Error('Código de barras inválido')
-      if (!vendaData.valor_total || vendaData.valor_total <= 0 || isNaN(vendaData.valor_total)) throw new Error(`Valor do produto inválido: ${vendaData.valor_total}`)
-      if (!vendaData.data_venda) throw new Error('Data da venda não informada')
+      console.log('🔧 Dados da venda completos:', {
+        metodo_pagamento_display: paymentMethod,
+        metodo_pagamento_api: paymentMethodKey,
+        idioma_atual: currentLanguage,
+        produto_info: {
+          nome: produto.nome,
+          preco_capa: produto.preco_capa,
+          preco_liquido: produto.preco_liquido,
+          preco: produto.preco
+        },
+        dados_finais: vendaData,
+        metodos_aceitos_api: ['Débito', 'Crédito', 'Pix', 'Dinheiro'],
+        validacao_metodo: ['Débito', 'Crédito', 'Pix', 'Dinheiro'].includes(vendaData.metodo_pagamento)
+      })
 
-      await apiService.cadastrarVendaPorCodigo(vendaData)
-
-      Alert.alert(t('success'), t('saleConfirmed'))
-      resetScanner()
-    } catch (error: any) {
-      let mensagemErro = t('saleError')
-      if (error.response) {
-        if (error.response.status === 500) {
-          mensagemErro = 'Erro interno do servidor. Tente novamente.'
-        } else if (error.response.status === 400) {
-          mensagemErro = 'Dados inválidos. Verifique as informações.'
-        }
+      // Validações robustas
+      if (!vendaData.codigo_barras || vendaData.codigo_barras.length < 3) {
+        throw new Error(`Código de barras inválido: "${vendaData.codigo_barras}"`)
       }
-      Alert.alert(t('error'), mensagemErro)
+      if (!vendaData.valor_total || vendaData.valor_total <= 0 || isNaN(vendaData.valor_total)) {
+        throw new Error(`Valor do produto inválido: ${vendaData.valor_total} (tipo: ${typeof vendaData.valor_total})`)
+      }
+      if (!vendaData.data_venda) {
+        throw new Error('Data da venda não informada')
+      }
+      if (!vendaData.metodo_pagamento || vendaData.metodo_pagamento.trim() === '') {
+        throw new Error(`Método de pagamento inválido: "${vendaData.metodo_pagamento}"`)
+      }
+
+      // Validação adicional dos métodos aceitos pela API
+      const metodosAceitos = ['Débito', 'Crédito', 'Pix', 'Dinheiro']
+      if (!metodosAceitos.includes(vendaData.metodo_pagamento)) {
+        throw new Error(`Método de pagamento não reconhecido: "${vendaData.metodo_pagamento}". Métodos aceitos pela API: ${metodosAceitos.join(', ')}`)
+      }
+
+      // Tentar cadastrar venda com retry
+      console.log('🚀 Iniciando cadastro de venda...')
+      await apiService.cadastrarVendaPorCodigo(vendaData)
+      
+      console.log('✅ Venda cadastrada com sucesso!')
+      setApiOnline(true) // API funcionou, marcar como online
+      
+      Alert.alert(t('success'), t('saleConfirmed'), [
+        {
+          text: t('ok'),
+          onPress: () => resetScanner()
+        }
+      ])
+    } catch (error: any) {
+      console.error('❌ Erro detalhado na venda:', {
+        error: error,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        config: error.config
+      })
+
+      let mensagemErro = t('saleError')
+      let titulo = t('error')
+      
+      // Tratamento específico por tipo de erro
+      if (error.response?.status === 500) {
+        mensagemErro = `Erro interno do servidor (500). ${error.response?.data?.message || 'Tente novamente em alguns minutos.'}`
+        titulo = 'Problema no Servidor'
+      } else if (error.response?.status === 422) {
+        const errorDetail = error.response?.data?.detail
+        let specificError = 'Verifique o método de pagamento.'
+        
+        if (errorDetail && Array.isArray(errorDetail) && errorDetail[0]?.msg) {
+          specificError = errorDetail[0].msg
+        }
+        
+        mensagemErro = `Dados rejeitados (422): ${specificError}\n\nMétodo atual: ${paymentMethodKey}\nMétodos aceitos: Débito, Crédito, Pix, Dinheiro`
+        titulo = 'Método de Pagamento Inválido'
+      } else if (error.response?.status === 400) {
+        mensagemErro = `Dados inválidos (400): ${error.response?.data?.message || 'Verifique as informações do produto.'}`
+        titulo = 'Dados Inválidos'
+      } else if (error.response?.status === 403) {
+        mensagemErro = 'Sem permissão para registrar vendas. Faça login novamente.'
+        titulo = 'Erro de Autenticação'
+      } else if (error.response?.status === 404) {
+        mensagemErro = 'Endpoint não encontrado. Verifique a configuração da API.'
+        titulo = 'Erro de Configuração'
+      } else if (error.code === 'ECONNABORTED') {
+        mensagemErro = 'Conexão muito lenta. A venda pode não ter sido registrada. Verifique sua internet.'
+        titulo = 'Timeout'
+      } else if (error.message?.includes('ConnectionTerminated')) {
+        mensagemErro = 'Problema na conexão com o banco de dados. A venda não foi registrada.'
+        titulo = 'Erro de Conexão'
+      } else if (!error.response) {
+        mensagemErro = 'Sem conexão com a internet. A venda não foi registrada.'
+        titulo = 'Sem Conexão'
+      } else if (error.message) {
+        mensagemErro = `Erro: ${error.message}`
+      }
+
+      // Log adicional para debug
+      console.error('🔴 Erro final processado:', { titulo, mensagemErro })
+
+      // Atualizar status da API baseado no erro
+      if (error.response?.status >= 500 || !error.response) {
+        setApiOnline(false)
+      }
+
+      const buttons = []
+      
+      // Só mostrar retry para erros temporários
+      if (error.response?.status >= 500 || 
+          error.code === 'ECONNABORTED' || 
+          error.message?.includes('ConnectionTerminated') || 
+          !error.response) {
+        buttons.push({
+          text: 'Tentar Novamente',
+          onPress: () => {
+            setTimeout(() => handleConfirmarVenda(), 1000)
+          }
+        })
+      }
+      
+      buttons.push({
+        text: 'Cancelar',
+        style: 'cancel' as const
+      })
+
+      Alert.alert(titulo, mensagemErro, buttons)
     } finally {
       setLoading(false)
     }
   }
 
+  // Mapeia métodos de pagamento traduzidos para valores aceitos pela API
+  const getPaymentMethodKey = (translatedMethod: string): string => {
+    // A API aceita EXATAMENTE: 'Débito', 'Crédito', 'Dinheiro' ou 'Pix'
+    const methodMap: Record<string, string> = {
+      // Português
+      'Débito': 'Débito',
+      'Crédito': 'Crédito', 
+      'Pix': 'Pix',
+      'Dinheiro': 'Dinheiro',
+      // Italiano
+      'Debito': 'Débito',
+      'Credito': 'Crédito',
+      'Contanti': 'Dinheiro',
+      // Inglês
+      'Debit': 'Débito',
+      'Credit': 'Crédito',
+      'Cash': 'Dinheiro'
+    }
+    
+    const key = methodMap[translatedMethod] || 'Dinheiro' // fallback para Dinheiro
+    console.log('🔄 Mapeamento de método:', translatedMethod, '→', key)
+    return key
+  }
+
+  // Função para selecionar método de pagamento
+  const selectPaymentMethod = (method: string) => {
+    const translatedMethod = method
+    const methodKey = getPaymentMethodKey(translatedMethod)
+    setPaymentMethod(translatedMethod)
+    setPaymentMethodKey(methodKey)
+    console.log('🔧 Método selecionado:', translatedMethod, '→ Chave API:', methodKey)
+  }
+
   // Função chamada quando o usuário confirma o método de pagamento na aba/modal
   const confirmarMetodoPagamento = () => {
-    if (!paymentMethod) {
+    if (!paymentMethod || !paymentMethodKey) {
       Alert.alert('Erro', 'Selecione uma forma de pagamento.')
       return
     }
@@ -227,6 +475,15 @@ export default function Vendas() {
               }}
             />
 
+            {/* Status da API */}
+            {!apiOnline && (
+              <View style={[styles.statusInfo, { backgroundColor: '#fff3cd', borderLeftColor: '#ffc107' }]}>
+                <Text style={[styles.statusTexto, { color: '#856404' }]}>
+                  ⚠️ API temporariamente indisponível. Algumas funções podem não funcionar.
+                </Text>
+              </View>
+            )}
+
             {/* Status */}
             {!produto && !loading && (
               <View style={styles.statusInfo}>
@@ -255,12 +512,12 @@ export default function Vendas() {
                   {/* Mostra método selecionado (se houver) */}
                   {paymentMethod ? (
                     <View style={styles.selectedPaymentRow}>
-                      <Text style={styles.selectedPaymentLabel}>Forma de pagamento:</Text>
+                      <Text style={styles.selectedPaymentLabel}>{t('paymentMethodLabel')}:</Text>
                       <View style={[
                         styles.paymentBadge,
-                        paymentMethod === 'Débito' && styles.paymentDebit,
-                        paymentMethod === 'Crédito' && styles.paymentCredit,
-                        (paymentMethod === 'Pix' || paymentMethod === 'Dinheiro') && styles.paymentBlack
+                        paymentMethod === t('debit') && styles.paymentDebit,
+                        paymentMethod === t('credit') && styles.paymentCredit,
+                        (paymentMethod === t('pix') || paymentMethod === t('cash')) && styles.paymentBlack
                       ]}>
                         <Text style={styles.paymentBadgeText}>{paymentMethod}</Text>
                       </View>
@@ -277,7 +534,7 @@ export default function Vendas() {
             {/* Botões */}
             <View style={styles.botoesContainer}>
               <TouchableOpacity
-                style={[styles.fixedRegistrarVendaBtn, styles.botoesBox, (!produto || loading) && styles.botaoDisabled]}
+                style={[styles.botaoAcao, styles.fixedRegistrarVendaBtn, (!produto || loading) && styles.botaoDisabled]}
                 onPress={handleConfirmarVenda}
                 disabled={loading || !produto}
               >
@@ -287,7 +544,7 @@ export default function Vendas() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.fixedRegistrarVendaBtn, styles.botoesBox]}
+                style={[styles.botaoAcao, styles.fixedRegistrarVendaBtn]}
                 onPress={resetScanner}
                 disabled={loading}
               >
@@ -308,50 +565,51 @@ export default function Vendas() {
         onRequestClose={() => {
           // fecha modal pelo botão de hardware (Android)
           setPaymentMethod(null)
+          setPaymentMethodKey(null)
           setShowPaymentTab(false)
         }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.paymentTabTitle}>Método de Pagamento</Text>
+            <Text style={styles.paymentTabTitle}>{t('paymentMethodTitle')}</Text>
 
             <View style={styles.paymentOptionsRow}>
               <TouchableOpacity
                 style={[
                   styles.paymentOption,
-                  paymentMethod === 'Débito' ? styles.paymentOptionSelected : null,
+                  paymentMethod === t('debit') ? styles.paymentOptionSelected : null,
                   { backgroundColor: '#E8F6EA' }
                 ]}
-                onPress={() => setPaymentMethod('Débito')}
+                onPress={() => selectPaymentMethod(t('debit'))}
               >
-                <Text style={[styles.paymentOptionText, { color: '#2E7D32', fontWeight: paymentMethod === 'Débito' ? '700' : '600' }]}>Débito</Text>
+                <Text style={[styles.paymentOptionText, { color: '#2E7D32', fontWeight: paymentMethod === t('debit') ? '700' : '600' }]}>{t('debit')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.paymentOption,
-                  paymentMethod === 'Crédito' ? styles.paymentOptionSelected : null,
+                  paymentMethod === t('credit') ? styles.paymentOptionSelected : null,
                   { backgroundColor: '#FDECEA' }
                 ]}
-                onPress={() => setPaymentMethod('Crédito')}
+                onPress={() => selectPaymentMethod(t('credit'))}
               >
-                <Text style={[styles.paymentOptionText, { color: '#C62828', fontWeight: paymentMethod === 'Crédito' ? '700' : '600' }]}>Crédito</Text>
+                <Text style={[styles.paymentOptionText, { color: '#C62828', fontWeight: paymentMethod === t('credit') ? '700' : '600' }]}>{t('credit')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.paymentOptionsRow}>
               <TouchableOpacity
-                style={[styles.paymentOption, paymentMethod === 'Pix' ? styles.paymentOptionSelected : null]}
-                onPress={() => setPaymentMethod('Pix')}
+                style={[styles.paymentOption, paymentMethod === t('pix') ? styles.paymentOptionSelected : null]}
+                onPress={() => selectPaymentMethod(t('pix'))}
               >
-                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === 'Pix' ? '700' : '600' }]}>Pix</Text>
+                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === t('pix') ? '700' : '600' }]}>{t('pix')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.paymentOption, paymentMethod === 'Dinheiro' ? styles.paymentOptionSelected : null]}
-                onPress={() => setPaymentMethod('Dinheiro')}
+                style={[styles.paymentOption, paymentMethod === t('cash') ? styles.paymentOptionSelected : null]}
+                onPress={() => selectPaymentMethod(t('cash'))}
               >
-                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === 'Dinheiro' ? '700' : '600' }]}>Dinheiro</Text>
+                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === t('cash') ? '700' : '600' }]}>{t('cash')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -361,10 +619,11 @@ export default function Vendas() {
                 onPress={() => {
                   // cancelar seleção: limpa método e fecha modal
                   setPaymentMethod(null)
+                  setPaymentMethodKey(null)
                   setShowPaymentTab(false)
                 }}
               >
-                <Text style={styles.botaoSecundarioTexto}>Cancelar</Text>
+                <Text style={styles.botaoSecundarioTexto}>{t('cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -375,7 +634,7 @@ export default function Vendas() {
                 onPress={confirmarMetodoPagamento}
                 disabled={!paymentMethod}
               >
-                <Text style={styles.fixedRegistrarVendaBtnText}>Confirmar</Text>
+                <Text style={styles.fixedRegistrarVendaBtnText}>{t('confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -386,12 +645,18 @@ export default function Vendas() {
 }
 
 const styles = StyleSheet.create({
-  botoesBox: {
+  botaoAcao: {
     flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
     marginHorizontal: 2,
-    minWidth: 120,
-    maxWidth: 200,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
+
   fixedRegistrarMetodoBtn: {
     backgroundColor: "#FF9800",
     borderWidth: 2,
@@ -405,15 +670,6 @@ const styles = StyleSheet.create({
   },
   fixedRegistrarVendaBtn: {
     backgroundColor: "#FF9800",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    marginHorizontal: 2,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
   fixedRegistrarVendaBtnText: {
     color: "#ffffff",
@@ -504,7 +760,7 @@ const styles = StyleSheet.create({
   },
   botoesContainer: {
     flexDirection: "row",
-    gap: 10,
+    gap: 16,
     justifyContent: "center",
     alignItems: "center",
     width: "80%",

@@ -12,7 +12,7 @@ export default function Relatorios() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <Header 
-        usuario="Andreas" 
+        usuario="Andrea" 
         pagina={t('reportsAndInsights')} 
       />
 
