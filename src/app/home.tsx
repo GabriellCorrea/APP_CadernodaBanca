@@ -3,23 +3,32 @@ import { Header } from "@/components/header";
 import { MaisVendidos } from "@/components/MaisVendidos/MaisVendidos";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import { useLanguage } from "@/contexts/LanguageContext";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [inputMeta, setInputMeta] = useState('');
+  const [currentMeta, setCurrentMeta] = useState('600');
+
+  useEffect(() => {
+    const metaStorage = localStorage.getItem('metaDiaria');
+    if (metaStorage) {
+      setCurrentMeta(metaStorage);
+    }
+  }, [modalVisible]);
 
   return (
     <SafeAreaView style={styles.container}>
-     
       <Header
         usuario="Andrea"
         pagina={t('home')}
       />
-
 
       <ScrollView
         style={styles.scrollViewContainer}
@@ -27,11 +36,52 @@ export default function Home() {
       >
         <MetaDoDia />
         <MaisVendidos />
-
-     
-        
+        <TouchableOpacity
+          style={{marginTop: 16, backgroundColor: '#FF9800', padding: 12, borderRadius: 8, alignSelf: 'center'}}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={{color: '#fff', fontWeight: 'bold'}}>Editar Meta Diária</Text>
+        </TouchableOpacity>
       </ScrollView>
 
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)'}}>
+          <View style={{backgroundColor: '#fff', padding: 24, borderRadius: 12, width: '80%'}}>
+            <Text style={{marginBottom: 8}}>Meta diária atual: {currentMeta}</Text>
+            <TextInput
+              style={{borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8, marginBottom: 8}}
+              keyboardType="numeric"
+              value={inputMeta}
+              onChangeText={setInputMeta}
+              placeholder="Nova meta diária"
+            />
+            <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={{marginRight: 8}}>
+                <Text>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  const newMeta = Number(inputMeta);
+                  if (!isNaN(newMeta) && newMeta > 0) {
+                    localStorage.setItem('metaDiaria', newMeta.toString());
+                    setCurrentMeta(newMeta.toString());
+                    setModalVisible(false);
+                    setInputMeta('');
+                  }
+                }}
+                style={{backgroundColor: '#FF9800', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6}}
+              >
+                <Text style={{color: '#fff'}}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <TouchableOpacity
         style={styles.fixedRegistrarVendaBtn}

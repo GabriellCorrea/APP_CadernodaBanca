@@ -2,7 +2,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Text, View, ActivityIndicator } from "react-native";
+import { Text, View, ActivityIndicator, TouchableOpacity, TextInput } from "react-native";
 import { styles } from "./styles";
 import { buscarMetaDiaria, buscarVendasDoDia } from "@/services/api";
 
@@ -13,11 +13,13 @@ type Venda = {
 
 export const MetaDoDia: React.FC = () => {
   const { t } = useLanguage();
-  const [metaDiaria, setMetaDiaria] = useState(600);
+  const [metaDiaria, setMetaDiaria] = useState<number>(600);
   const [vendasDoDia, setVendasDoDia] = useState<Venda[]>([]);
   const [valorAtual, setValorAtual] = useState(0);
   const [progresso, setProgresso] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [inputMeta, setInputMeta] = useState(metaDiaria.toString());
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -26,8 +28,15 @@ export const MetaDoDia: React.FC = () => {
           buscarMetaDiaria(),
           buscarVendasDoDia()
         ]);
-
-        setMetaDiaria(meta);
+        // Tenta buscar meta do localStorage
+        const metaStorage = localStorage.getItem('metaDiaria');
+        if (metaStorage) {
+          setMetaDiaria(Number(metaStorage));
+          setInputMeta(metaStorage);
+        } else {
+          setMetaDiaria(meta);
+          setInputMeta(meta.toString());
+        }
         setVendasDoDia(vendas);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -35,7 +44,6 @@ export const MetaDoDia: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     carregarDados();
 
     // Atualizar dados a cada 5 minutos
@@ -61,9 +69,11 @@ export const MetaDoDia: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        {/* 2. Adiciona o componente do ícone aqui */}
         <MaterialCommunityIcons name="target" size={24} color="#333" />
         <Text style={styles.title}>{t('dailyGoal')}</Text>
+        <TouchableOpacity onPress={() => setEditMode(true)} style={{marginLeft: 8}}>
+          <MaterialCommunityIcons name="pencil" size={20} color="#333" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.progressRow}>
@@ -79,6 +89,39 @@ export const MetaDoDia: React.FC = () => {
         <Text style={styles.currentValue}>{formatCurrency(valorAtual)}</Text>
         <Text style={styles.goalValue}>{formatCurrency(metaDiaria)}</Text>
       </View>
+
+      {editMode && (
+        <View style={{marginTop: 16, backgroundColor: '#fff', padding: 12, borderRadius: 8, elevation: 2}}>
+          <Text style={{marginBottom: 8}}>{t('editDailyGoal') || 'Editar meta diária:'}</Text>
+          <TextInput
+            style={{borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8, marginBottom: 8}}
+            keyboardType="numeric"
+            value={inputMeta}
+            onChangeText={setInputMeta}
+          />
+          <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+            <TouchableOpacity
+              style={{marginRight: 8}}
+              onPress={() => setEditMode(false)}
+            >
+              <Text>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                const newMeta = Number(inputMeta);
+                if (!isNaN(newMeta) && newMeta > 0) {
+                  setMetaDiaria(newMeta);
+                  localStorage.setItem('metaDiaria', newMeta.toString());
+                  setEditMode(false);
+                }
+              }}
+              style={{backgroundColor: '#FF9800', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6}}
+            >
+              <Text style={{color: '#fff'}}>Salvar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
