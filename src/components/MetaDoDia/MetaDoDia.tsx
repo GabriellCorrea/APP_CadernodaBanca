@@ -2,6 +2,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as React from "react";
 import { useState, useEffect } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, ActivityIndicator, TouchableOpacity, TextInput } from "react-native";
 import { styles } from "./styles";
 import { buscarMetaDiaria, buscarVendasDoDia } from "@/services/api";
@@ -28,8 +29,8 @@ export const MetaDoDia: React.FC = () => {
           buscarMetaDiaria(),
           buscarVendasDoDia()
         ]);
-        // Tenta buscar meta do localStorage
-        const metaStorage = localStorage.getItem('metaDiaria');
+        // Tenta buscar meta do AsyncStorage
+        const metaStorage = await AsyncStorage.getItem('metaDiaria');
         if (metaStorage) {
           setMetaDiaria(Number(metaStorage));
           setInputMeta(metaStorage);
@@ -107,11 +108,11 @@ export const MetaDoDia: React.FC = () => {
               <Text>Cancelar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {
+              onPress={async () => {
                 const newMeta = Number(inputMeta);
                 if (!isNaN(newMeta) && newMeta > 0) {
                   setMetaDiaria(newMeta);
-                  localStorage.setItem('metaDiaria', newMeta.toString());
+                  await AsyncStorage.setItem('metaDiaria', newMeta.toString());
                   setEditMode(false);
                 }
               }}

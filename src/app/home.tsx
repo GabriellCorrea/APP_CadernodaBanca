@@ -4,6 +4,7 @@ import { MaisVendidos } from "@/components/MaisVendidos/MaisVendidos";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import { useLanguage } from "@/contexts/LanguageContext";
 import React, { useState, useEffect } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,10 +18,13 @@ export default function Home() {
   const [currentMeta, setCurrentMeta] = useState('600');
 
   useEffect(() => {
-    const metaStorage = localStorage.getItem('metaDiaria');
-    if (metaStorage) {
-      setCurrentMeta(metaStorage);
-    }
+    const fetchMeta = async () => {
+      const metaStorage = await AsyncStorage.getItem('metaDiaria');
+      if (metaStorage) {
+        setCurrentMeta(metaStorage);
+      }
+    };
+    fetchMeta();
   }, [modalVisible]);
 
   return (
@@ -65,10 +69,10 @@ export default function Home() {
                 <Text>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
                   const newMeta = Number(inputMeta);
                   if (!isNaN(newMeta) && newMeta > 0) {
-                    localStorage.setItem('metaDiaria', newMeta.toString());
+                    await AsyncStorage.setItem('metaDiaria', newMeta.toString());
                     setCurrentMeta(newMeta.toString());
                     setModalVisible(false);
                     setInputMeta('');
