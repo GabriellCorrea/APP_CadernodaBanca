@@ -24,6 +24,7 @@ const translations = {
     topSellers: 'Mais vendidos',
     start: 'Início',
     registerSale: '+ Registrar Venda',
+    editDailyGoal: 'Editar meta diária',
     
     // Navegação
     home: 'Início',
@@ -150,6 +151,7 @@ const translations = {
     topSellers: 'Più venduti',
     start: 'Inizio',
     registerSale: '+ Registra Vendita',
+    editDailyGoal: 'Modifica obiettivo giornaliero',
     
     // Navegação
     home: 'Inizio',
@@ -276,6 +278,7 @@ const translations = {
     topSellers: 'Top Sellers',
     start: 'Home',
     registerSale: '+ Register Sale',
+    editDailyGoal: 'Edit daily goal',
     
     // Navegação
     home: 'Home',

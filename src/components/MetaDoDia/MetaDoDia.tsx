@@ -1,11 +1,11 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as React from "react";
-import { useState, useEffect } from "react";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text, View, ActivityIndicator, TouchableOpacity, TextInput } from "react-native";
-import { styles } from "./styles";
 import { buscarMetaDiaria, buscarVendasDoDia } from "@/services/api";
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { styles } from "./styles";
 
 type Venda = {
   id: number;
@@ -72,8 +72,8 @@ export const MetaDoDia: React.FC = () => {
       <View style={styles.titleContainer}>
         <MaterialCommunityIcons name="target" size={24} color="#333" />
         <Text style={styles.title}>{t('dailyGoal')}</Text>
-        <TouchableOpacity onPress={() => setEditMode(true)} style={{marginLeft: 8}}>
-          <MaterialCommunityIcons name="pencil" size={20} color="#333" />
+        <TouchableOpacity onPress={() => setEditMode(true)} style={styles.editButton}>
+          <MaterialCommunityIcons name="pencil" size={28} color="#FF9800" />
         </TouchableOpacity>
       </View>
 
@@ -92,20 +92,20 @@ export const MetaDoDia: React.FC = () => {
       </View>
 
       {editMode && (
-        <View style={{marginTop: 16, backgroundColor: '#fff', padding: 12, borderRadius: 8, elevation: 2}}>
-          <Text style={{marginBottom: 8}}>{t('editDailyGoal') || 'Editar meta diária:'}</Text>
+        <View style={styles.editModal}>
+          <Text style={styles.editModalTitle}>{t('editDailyGoal')}:</Text>
           <TextInput
-            style={{borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 8, marginBottom: 8}}
+            style={styles.editInput}
             keyboardType="numeric"
             value={inputMeta}
             onChangeText={setInputMeta}
           />
-          <View style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+          <View style={styles.editButtonsRow}>
             <TouchableOpacity
-              style={{marginRight: 8}}
+              style={styles.cancelButton}
               onPress={() => setEditMode(false)}
             >
-              <Text>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={async () => {
@@ -116,9 +116,9 @@ export const MetaDoDia: React.FC = () => {
                   setEditMode(false);
                 }
               }}
-              style={{backgroundColor: '#FF9800', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6}}
+              style={styles.saveButton}
             >
-              <Text style={{color: '#fff'}}>Salvar</Text>
+              <Text style={styles.saveButtonText}>{t('save')}</Text>
             </TouchableOpacity>
           </View>
         </View>
