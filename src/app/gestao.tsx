@@ -2,9 +2,9 @@ import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Gestao() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function Gestao() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header usuario="Andrea" pagina="Gestão" />
+      <Header usuario="Andrea" pagina={t('management')} />
 
       <View style={styles.contentCenter}>
         <View style={styles.buttonsContainer}>
@@ -22,7 +22,7 @@ export default function Gestao() {
             activeOpacity={0.85}
           >
             <Icon name="plus" size={70} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}>Registrar{"\n"}Chamada</Text>
+            <Text style={styles.buttonText}>{t('registerCallButton')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -31,7 +31,7 @@ export default function Gestao() {
             activeOpacity={0.85}
           >
             <Icon name="cart-arrow-up" size={70} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}>Registrar{"\n"}Devolução</Text>
+            <Text style={styles.buttonText}>{t('registerReturnButton')}</Text>
           </TouchableOpacity>
         </View>
       </View>

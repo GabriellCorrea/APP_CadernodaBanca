@@ -32,9 +32,15 @@ const translations = {
     salesPage: 'Vendas',
     returns: 'Chamadas',
     reports: 'Relatórios',
+    calls: 'Chamadas',
+    newCall: 'Nova Chamada',
+    lastRegisteredCalls: 'Últimas Chamadas Registradas',
     
     // Páginas
     reportsAndInsights: 'Relatórios e Insights',
+    management: 'Gestão',
+    registerCallButton: 'Registrar\nChamada',
+    registerReturnButton: 'Registrar\nDevolução',
     
     // Estoque
     searchMagazine: 'Buscar revista...',
@@ -84,6 +90,7 @@ const translations = {
     confirm: 'Confirmar',
     fileUploadSuccess: 'Arquivo enviado com sucesso!',
     fileUploadError: 'Não foi possível enviar o arquivo. Tente novamente.',
+    filePickError: 'Erro ao selecionar o arquivo.',
     
     // Mais vendidos
     loadingTopSellers: 'Carregando mais vendidos...',
@@ -98,6 +105,7 @@ const translations = {
     // Geral
     units: 'un.',
     qty: 'Qtd',
+    salesLabel: 'Vendas',
     
     // Métodos de pagamento
     paymentMethodTitle: 'Método de Pagamento',
@@ -159,9 +167,15 @@ const translations = {
     salesPage: 'Vendite',
     returns: 'Resi',
     reports: 'Rapporti',
+    calls: 'Chiamate',
+    newCall: 'Nuova Chiamata',
+    lastRegisteredCalls: 'Ultime Chiamate Registrate',
     
     // Páginas
     reportsAndInsights: 'Rapporti e Statistiche',
+    management: 'Gestione',
+    registerCallButton: 'Registra\nChiamata',
+    registerReturnButton: 'Registra\nReso',
     
     // Estoque
     searchMagazine: 'Cerca rivista...',
@@ -211,6 +225,7 @@ const translations = {
     confirm: 'Conferma',
     fileUploadSuccess: 'File caricato con successo!',
     fileUploadError: 'Non è stato possibile caricare il file. Riprova.',
+    filePickError: 'Errore nella selezione del file.',
     
     // Mais vendidos
     loadingTopSellers: 'Caricamento più venduti...',
@@ -223,8 +238,9 @@ const translations = {
     sales: 'vendite',
     
     // Geral
-    units: 'pz.',
+    units: 'un.',
     qty: 'Qtà',
+    salesLabel: 'Vendite',
     
     // Métodos de pagamento
     paymentMethodTitle: 'Metodo di Pagamento',
@@ -286,9 +302,15 @@ const translations = {
     salesPage: 'Sales',
     returns: 'Returns',
     reports: 'Reports',
+    calls: 'Calls',
+    newCall: 'New Call',
+    lastRegisteredCalls: 'Last Registered Calls',
     
     // Páginas
     reportsAndInsights: 'Reports and Analytics',
+    management: 'Management',
+    registerCallButton: 'Register\nCall',
+    registerReturnButton: 'Register\nReturn',
     
     // Estoque
     searchMagazine: 'Search magazine...',
@@ -338,6 +360,7 @@ const translations = {
     confirm: 'Confirm',
     fileUploadSuccess: 'File uploaded successfully!',
     fileUploadError: 'Could not upload file. Please try again.',
+    filePickError: 'Error selecting file.',
     
     // Mais vendidos
     loadingTopSellers: 'Loading top sellers...',
@@ -350,8 +373,9 @@ const translations = {
     sales: 'sales',
     
     // Geral
-    units: 'pcs.',
+    units: 'un.',
     qty: 'Qty',
+    salesLabel: 'Sales',
     
     // Métodos de pagamento
     paymentMethodTitle: 'Payment Method',

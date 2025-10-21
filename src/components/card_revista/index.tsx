@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Image } from "react-native";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Image, Text, View } from "react-native";
 import { styles } from "./styles";
 
 type CardRevistaProps = {
@@ -17,6 +17,8 @@ export function CardRevista({
   vendas,
   estoque,
 }: CardRevistaProps) {
+  const { t } = useLanguage();
+  
   return (
     <View style={styles.card}>
       <Image
@@ -33,8 +35,8 @@ export function CardRevista({
         </Text>
 
         <Text style={styles.preco}>R$ {preco.toFixed(2)}</Text>
-        <Text style={styles.textoCinza}>Vendas: {vendas}</Text>
-        <Text style={styles.textoCinza}>{estoque} un.</Text>
+        <Text style={styles.textoCinza}>{t('salesLabel')}: {vendas}</Text>
+        <Text style={styles.textoCinza}>{estoque} {t('units')}</Text>
       </View>
     </View>
   );
