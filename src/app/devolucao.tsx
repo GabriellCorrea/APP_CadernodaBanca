@@ -17,12 +17,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiService } from "@/services/api";
 
-export default function Chamadas() {
+export default function Devolucoes() {
   const { t } = useLanguage();
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const chamadas = [
+  const devolucoes = [
     {
       id: 1,
       titulo: "Vogue Michael Jackson",
@@ -97,7 +97,7 @@ export default function Chamadas() {
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina={t("calls")} />
+      <Header usuario="Andrea" pagina={t("returns")} />
 
       <ScrollView
         style={styles.container}
@@ -106,7 +106,7 @@ export default function Chamadas() {
       >
         <View style={styles.tituloLinha}>
           <Ionicons name="refresh-circle-outline" size={22} color="#333" />
-          <Text style={styles.titulo}>{t("newCall")}</Text>
+          <Text style={styles.titulo}>{t("newReturn")}</Text>
         </View>
 
         <TouchableOpacity
@@ -125,12 +125,12 @@ export default function Chamadas() {
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            {t("lastRegisteredCalls")}
+            {t("lastRegisteredReturns")}
           </Text>
         </View>
 
         <View style={styles.grid}>
-          {chamadas.map((p) => (
+          {devolucoes.map((p) => (
             <View style={styles.cardContainer} key={p.id}>
               <CardRevista
                 imagem={p.imagem}
@@ -346,3 +346,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
