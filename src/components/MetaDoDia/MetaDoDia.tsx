@@ -105,7 +105,7 @@ export const MetaDoDia: React.FC = () => {
               style={styles.cancelButton}
               onPress={() => setEditMode(false)}
             >
-              <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+              <Text style={styles.cancelButtonText}>{t('Cancelar')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={async () => {
@@ -118,7 +118,7 @@ export const MetaDoDia: React.FC = () => {
               }}
               style={styles.saveButton}
             >
-              <Text style={styles.saveButtonText}>{t('save')}</Text>
+              <Text style={styles.saveButtonText}>{t('Salvar')}</Text>
             </TouchableOpacity>
           </View>
         </View>

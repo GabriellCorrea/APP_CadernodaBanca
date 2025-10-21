@@ -23,7 +23,7 @@ const translations = {
     progress: 'Progresso',
     topSellers: 'Mais vendidos',
     start: 'Início',
-    registerSale: '+ Registrar Venda',
+    registerSale: 'Registrar Venda',
     editDailyGoal: 'Editar meta diária',
     
     // Navegação
@@ -150,7 +150,7 @@ const translations = {
     progress: 'Progresso',
     topSellers: 'Più venduti',
     start: 'Inizio',
-    registerSale: '+ Registra Vendita',
+    registerSale: 'Registra Vendita',
     editDailyGoal: 'Modifica obiettivo giornaliero',
     
     // Navegação
@@ -277,7 +277,7 @@ const translations = {
     progress: 'Progress',
     topSellers: 'Top Sellers',
     start: 'Home',
-    registerSale: '+ Register Sale',
+    registerSale: 'Register Sale',
     editDailyGoal: 'Edit daily goal',
     
     // Navegação
