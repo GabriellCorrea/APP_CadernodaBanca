@@ -86,7 +86,7 @@ export default function Devolucoes() {
 
     setShowModal(false);
     try {
-      await apiService.cadastrarChamada(arquivoSelecionado);
+      await apiService.chamadas.cadastrar(arquivoSelecionado);
 
       Alert.alert(t("success"), t("fileUploadSuccess"));
       setArquivoSelecionado(null);

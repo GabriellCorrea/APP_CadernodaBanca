@@ -18,7 +18,7 @@ const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = MAX_RETRIES
       if (attempt === maxRetries) {
         throw error
       }
-      
+
       // Só faz retry em erros de rede/servidor (5xx, timeout, etc)
       if (
         error.code === 'ECONNABORTED' ||
@@ -54,7 +54,7 @@ export async function buscarVendasDoDia() {
     return await retryWithBackoff(async () => {
       const res = await api.get('/vendas/hoje');
       const vendas = toArray(res.data, 'data');
-      
+
       // Mapeia as vendas para o formato esperado
       return vendas.map((venda: any) => ({
         id: venda.id_venda || venda.id,
@@ -110,7 +110,7 @@ api.interceptors.response.use(
     console.error('  - Dados:', err.response?.data)
     console.error('  - Mensagem:', err.message)
     console.error('  - Código:', err.code)
-    
+
     // Mensagens de erro mais amigáveis
     if (err.code === 'ECONNABORTED') {
       console.error('⏰ Timeout da requisição - servidor demorou para responder')
@@ -121,7 +121,7 @@ api.interceptors.response.use(
     } else if (!err.response) {
       console.error('🌐 Erro de rede - verifique sua conexão')
     }
-    
+
     throw err
   }
 )
@@ -133,119 +133,226 @@ const toArray = (data: any, key?: string) => {
 }
 
 export const apiService = {
-  async getRevistas() {
-    const res = await api.get('/revistas/tudo')
-    const revistas = toArray(res.data, 'data')
-
-    return revistas.map((rev: any) => ({
-      ...rev,
-      imagem: rev.imagem?.source?.uri ? { uri: rev.imagem.source.uri } : null,
-    }))
-  },
-
-  async buscarRevistaPorNome(nome: string) {
-    const res = await api.get(`/revistas/buscar/nome?q=${encodeURIComponent(nome)}`)
-    return toArray(res.data, 'data')
-  },
-
-  async buscarRevistaPorCodigoBarras(codigo: string) {
-    if (!codigo || codigo.length < 8) {
-      throw new Error('Código de barras inválido ou muito curto')
+  /**
+   * Funções relacionadas às metas.
+   */
+  metas: {
+    /**
+     * Busca a meta diária de vendas.
+     * (Movida da função exportada 'buscarMetaDiaria')
+     */
+    async getDiaria() {
+      try {
+        // Retorna uma meta padrão por enquanto, ou você pode criar um endpoint na API
+        return 600;
+      } catch (error) {
+        console.error('Erro ao buscar meta:', error);
+        return 600; // valor padrão caso não encontre meta para o dia
+      }
     }
-    
-    console.log('🔍 Buscando produto com código:', codigo)
-    const url = `/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo.trim())}`
-    console.log('🌐 URL da busca:', `${API_BASE_URL}${url}`)
-    
-    return await retryWithBackoff(async () => {
-      const res = await api.get(url)
-      console.log('📦 Resposta da busca:', res.data)
+  },
+
+  /**
+   * Funções relacionadas a Revistas e Produtos.
+   */
+  revistas: {
+    /**
+     * Busca todas as revistas.
+     * (Era 'getRevistas')
+     */
+    async getTudo() {
+      const res = await api.get('/revistas/tudo')
+      const revistas = toArray(res.data, 'data')
+
+      return revistas.map((rev: any) => ({
+        ...rev,
+        imagem: rev.imagem?.source?.uri ? { uri: rev.imagem.source.uri } : null,
+      }))
+    },
+
+    /**
+     * Busca uma revista pelo nome.
+     * (Era 'buscarRevistaPorNome')
+     */
+    async buscarPorNome(nome: string) {
+      const res = await api.get(`/revistas/buscar/nome?q=${encodeURIComponent(nome)}`)
+      return toArray(res.data, 'data')
+    },
+
+    /**
+     * Busca uma revista pelo código de barras.
+     * (Era 'buscarRevistaPorCodigoBarras')
+     */
+    async buscarPorCodigoBarras(codigo: string) {
+      if (!codigo || codigo.length < 8) {
+        throw new Error('Código de barras inválido ou muito curto')
+      }
+
+      console.log('🔍 Buscando produto com código:', codigo)
+      const url = `/revistas/buscar/codigo-barras?q=${encodeURIComponent(codigo.trim())}`
+      console.log('🌐 URL da busca:', `${API_BASE_URL}${url}`)
+
+      return await retryWithBackoff(async () => {
+        const res = await api.get(url)
+        console.log('📦 Resposta da busca:', res.data)
+        return res.data
+      })
+    },
+
+    /**
+     * Busca uma revista pela edição.
+     * (Era 'buscarRevistaPorEdicao')
+     */
+    async buscarPorEdicao(edicao: string) {
+      const res = await api.get(`/revistas/buscar/edicao?q=${encodeURIComponent(edicao)}`)
+      return toArray(res.data, 'data')
+    },
+
+    /**
+     * Envia a foto de uma revista para cadastro.
+     * (Era 'cadastrarFotoRevista')
+     */
+    async cadastrarFoto(file: any) {
+      const formData = new FormData()
+      // @ts-ignore
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'revista.jpg',
+        type: file.mimeType || 'image/jpeg',
+      })
+
+      const res = await api.post('/revistas/cadastrar-foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
       return res.data
-    })
+    },
   },
 
-  async buscarRevistaPorEdicao(edicao: string) {
-    const res = await api.get(`/revistas/buscar/edicao?q=${encodeURIComponent(edicao)}`)
-    return toArray(res.data, 'data')
-  },
+  /**
+   * Funções relacionadas a Vendas e Relatórios.
+   */
+  vendas: {
+    /**
+     * Busca todas as vendas.
+     * (Era 'getVendas')
+     */
+    async getTudo() {
+      const res = await api.get('/vendas/tudo')
+      return toArray(res.data, 'data')
+    },
 
-  async cadastrarFotoRevista(file: any) {
-    const formData = new FormData()
-    // @ts-ignore
-    formData.append('file', {
-      uri: file.uri,
-      name: file.name || 'revista.jpg',
-      type: file.mimeType || 'image/jpeg',
-    })
+    /**
+     * Busca as vendas recentes.
+     * (Era 'getVendasRecentes')
+     */
+    async getRecentes() {
+      const res = await api.get('/vendas/recentes')
+      return toArray(res.data, 'data')
+    },
 
-    const res = await api.post('/revistas/cadastrar-foto', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    /**
+     * Busca as vendas de hoje, com retry e mapeamento.
+     * (Lógica movida de 'buscarVendasDoDia' e 'getVendasHoje')
+     */
+    async getHoje() {
+      try {
+        return await retryWithBackoff(async () => {
+          const res = await api.get('/vendas/hoje');
+          const vendas = toArray(res.data, 'data');
 
-    return res.data
-  },
+          // Mapeia as vendas para o formato esperado
+          return vendas.map((venda: any) => ({
+            id: venda.id_venda || venda.id,
+            valor: parseFloat(venda.valor_total || venda.valor || 0)
+          }));
+        });
+      } catch (error) {
+        console.error('Erro ao buscar vendas após várias tentativas:', error);
+        return [];
+      }
+    },
 
-  async getVendas() {
-    const res = await api.get('/vendas/tudo')
-    return toArray(res.data, 'data')
-  },
+    /**
+     * Cadastra uma nova venda usando código de barras.
+     * (Era 'cadastrarVendaPorCodigo')
+     */
+    async cadastrarPorCodigo(dados: any) {
+      console.log('🚀 Enviando dados para API:', dados)
+      console.log('🌐 URL:', `${API_BASE_URL}/vendas/cadastrar-venda-por-codigo`)
 
-  async getVendasRecentes() {
-    const res = await api.get('/vendas/recentes')
-    return toArray(res.data, 'data')
-  },
+      return await retryWithBackoff(async () => {
+        const res = await api.post('/vendas/cadastrar-venda-por-codigo', dados)
+        console.log('✅ Resposta da API:', res.data)
+        return res.data
+      })
+    },
 
-  async getVendasHoje() {
-    const res = await api.get('/vendas/hoje')
-    return toArray(res.data, 'data')
-  },
-
-  async cadastrarVendaPorCodigo(dados: any) {
-    console.log('🚀 Enviando dados para API:', dados)
-    console.log('🌐 URL:', `${API_BASE_URL}/vendas/cadastrar-venda-por-codigo`)
-    
-    return await retryWithBackoff(async () => {
-      const res = await api.post('/vendas/cadastrar-venda-por-codigo', dados)
-      console.log('✅ Resposta da API:', res.data)
+    /**
+     * Cadastra uma nova venda usando ID do produto.
+     * (Era 'cadastrarVendaPorId')
+     */
+    async cadastrarPorId(dados: any) {
+      const res = await api.post('/vendas/cadastrar-venda-por-id', dados)
       return res.data
-    })
-  },
-  
-  async cadastrarVendaPorId(dados: any) {
-    const res = await api.post('/vendas/cadastrar-venda-por-id', dados)
-    return res.data
-  },
+    },
 
-  async getRelatorioSemana() {
-    const res = await api.get('/vendas/relatorio-semana')
-    return res.data
-  },
-
-  async cadastrarChamada(file: any) {
-    const formData = new FormData()
-    // @ts-ignore
-    formData.append('file', {
-      uri: file.uri,
-      name: file.name || 'chamada.pdf',
-      type: file.mimeType || 'application/pdf',
-    })
-
-    const res = await api.post('/chamadas/cadastrar-chamada', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-
-    return res.data
+    /**
+     * Busca o relatório de vendas da semana.
+     * (Era 'getRelatorioSemana')
+     */
+    async getRelatorioSemana() {
+      const res = await api.get('/vendas/relatorio-semana')
+      return res.data
+    },
   },
 
-  async listarChamadasUsuario(usuarioId: string) {
-    const res = await api.get(`/chamadas/listar-chamadas-usuario?usuarioId=${usuarioId}`)
-    return toArray(res.data, 'data')
+  /**
+   * Funções relacionadas a Chamadas (PDFs).
+   */
+  chamadas: {
+    /**
+     * Envia o PDF de uma chamada para cadastro.
+     * (Era 'cadastrarChamada')
+     */
+    async cadastrar(file: any) {
+      const formData = new FormData()
+      // @ts-ignore
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'chamada.pdf',
+        type: file.mimeType || 'application/pdf',
+      })
+
+      const res = await api.post('/chamadas/cadastrar-chamada', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
+      return res.data
+    },
+
+    /**
+     * Lista as chamadas de um usuário específico.
+     * (Era 'listarChamadasUsuario')
+     */
+    async listarPorUsuario(usuarioId: string) {
+      const res = await api.get(`/chamadas/listar-chamadas-usuario?usuarioId=${usuarioId}`)
+      return toArray(res.data, 'data')
+    },
   },
 
-  async ping() {
-    const res = await api.get('/ping')
-    return res.data
-  },
+  /**
+   * Funções utilitárias.
+   */
+  utils: {
+    /**
+     * Verifica se a API está online.
+     */
+    async ping() {
+      const res = await api.get('/ping')
+      return res.data
+    },
+  }
 }
 
 export default api

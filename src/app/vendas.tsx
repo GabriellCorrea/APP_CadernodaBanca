@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function Vendas() {
   const { t, currentLanguage } = useLanguage();
-  
+
   // Debug das traduções
   console.log('🌐 Idioma atual:', currentLanguage);
   console.log('🔧 Tradução debit:', t('debit'));
@@ -60,14 +60,14 @@ export default function Vendas() {
 
         // Verificar conectividade da API
         console.log('🔍 Verificando conectividade da API...')
-        await apiService.ping()
+        await apiService.utils.ping()
         setApiOnline(true)
         console.log('✅ API online')
 
       } catch (error) {
         console.error('❌ Erro na verificação da API:', error)
         setApiOnline(false)
-        
+
         const token = await AsyncStorage.getItem('access_token')
         if (!token) {
           router.push("/")
@@ -83,7 +83,7 @@ export default function Vendas() {
     // Verificar API a cada 30 segundos
     const interval = setInterval(async () => {
       try {
-        await apiService.ping()
+        await apiService.utils.ping()
         if (!apiOnline) {
           setApiOnline(true)
           console.log('✅ API voltou online')
@@ -102,20 +102,20 @@ export default function Vendas() {
   // Busca produto pelo código de barras
   const buscarProduto = async (codigo: string) => {
     const agora = Date.now()
-    
+
     if (agora - lastScanTime < 2000) return
     if (scanned || loading || codigo === lastScannedCode) return
-    
+
     // Validação e sanitização do código
     if (!codigo || typeof codigo !== 'string') return
-    
+
     // Filtrar URLs do Expo e códigos inválidos
     const codigoLimpo = codigo.trim()
     if (codigoLimpo.includes('://') || codigoLimpo.includes('exp://')) {
       console.log('🚫 Código inválido ignorado (URL):', codigoLimpo)
       return
     }
-    
+
     if (codigoLimpo.length < 8 || codigoLimpo.length > 18) {
       console.log('🚫 Código com tamanho inválido:', codigoLimpo.length)
       return
@@ -134,14 +134,14 @@ export default function Vendas() {
 
     console.log('🔍 Buscando produto válido:', codigoLimpo)
 
-    try {      
-      const data = await apiService.buscarRevistaPorCodigoBarras(codigoLimpo)
+    try {
+      const data = await apiService.revistas.buscarPorCodigoBarras(codigoLimpo)
 
       if (!data) throw { response: { status: 404 } }
 
       const produtoEncontrado = data["data"] || data
       if (!produtoEncontrado) throw { response: { status: 404 } }
-      
+
       setProduto(produtoEncontrado)
       setCodigoBarras(codigoLimpo)
       setShowPaymentTab(true)
@@ -161,7 +161,7 @@ export default function Vendas() {
       let mensagem = t('productNotFound')
       let titulo = t('error')
       let showRetry = true
-      
+
       // Tratamento específico por tipo de erro
       if (error.response?.status === 403) {
         mensagem = t('authError')
@@ -252,10 +252,10 @@ export default function Vendas() {
     try {
       const preco = produto.preco_capa || produto.preco_liquido || produto.preco || 0
       const precoNumerico = parseFloat(preco.toString()) || 0
-      
+
       const agora = new Date()
       const dataFormatada = agora.toISOString().split('T')[0]
-      
+
       // Validação mais rigorosa dos dados
       const vendaData = {
         metodo_pagamento: paymentMethodKey, // Usa a chave padronizada em vez da tradução
@@ -303,11 +303,11 @@ export default function Vendas() {
 
       // Tentar cadastrar venda com retry
       console.log('🚀 Iniciando cadastro de venda...')
-      await apiService.cadastrarVendaPorCodigo(vendaData)
-      
+      await apiService.revistas.buscarPorCodigoBarras(vendaData.codigo_barras)
+
       console.log('✅ Venda cadastrada com sucesso!')
       setApiOnline(true) // API funcionou, marcar como online
-      
+
       Alert.alert(t('success'), t('saleConfirmed'), [
         {
           text: t('ok'),
@@ -325,7 +325,7 @@ export default function Vendas() {
 
       let mensagemErro = t('saleError')
       let titulo = t('error')
-      
+
       // Tratamento específico por tipo de erro
       if (error.response?.status === 500) {
         mensagemErro = `Erro interno do servidor (500). ${error.response?.data?.message || 'Tente novamente em alguns minutos.'}`
@@ -333,11 +333,11 @@ export default function Vendas() {
       } else if (error.response?.status === 422) {
         const errorDetail = error.response?.data?.detail
         let specificError = 'Verifique o método de pagamento.'
-        
+
         if (errorDetail && Array.isArray(errorDetail) && errorDetail[0]?.msg) {
           specificError = errorDetail[0].msg
         }
-        
+
         mensagemErro = `Dados rejeitados (422): ${specificError}\n\nMétodo atual: ${paymentMethodKey}\nMétodos aceitos: Débito, Crédito, Pix, Dinheiro`
         titulo = 'Método de Pagamento Inválido'
       } else if (error.response?.status === 400) {
@@ -371,11 +371,11 @@ export default function Vendas() {
       }
 
       const buttons = []
-      
+
       // Só mostrar retry para erros temporários
-      if (error.response?.status >= 500 || 
-          error.code === 'ECONNABORTED' || 
-          error.message?.includes('ConnectionTerminated') || 
+      if (error.response?.status >= 500 ||
+          error.code === 'ECONNABORTED' ||
+          error.message?.includes('ConnectionTerminated') ||
           !error.response) {
         buttons.push({
           text: 'Tentar Novamente',
@@ -384,7 +384,7 @@ export default function Vendas() {
           }
         })
       }
-      
+
       buttons.push({
         text: 'Cancelar',
         style: 'cancel' as const
@@ -402,7 +402,7 @@ export default function Vendas() {
     const methodMap: Record<string, string> = {
       // Português
       'Débito': 'Débito',
-      'Crédito': 'Crédito', 
+      'Crédito': 'Crédito',
       'Pix': 'Pix',
       'Dinheiro': 'Dinheiro',
       // Italiano
@@ -414,7 +414,7 @@ export default function Vendas() {
       'Credit': 'Crédito',
       'Cash': 'Dinheiro'
     }
-    
+
     const key = methodMap[translatedMethod] || 'Dinheiro' // fallback para Dinheiro
     console.log('🔄 Mapeamento de método:', translatedMethod, '→', key)
     return key
