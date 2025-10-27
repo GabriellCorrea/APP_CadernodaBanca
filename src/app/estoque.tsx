@@ -29,7 +29,7 @@ export default function Estoque() {
     async function carregarRevistas() {
       try {
         setLoading(true);
-        const revistas = await apiService.getRevistas();
+        const revistas = await apiService.revistas.getTudo();
         setProdutos(revistas);
       } catch (error) {
         console.error("❌ Erro ao buscar revistas:", error);
