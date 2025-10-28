@@ -2,7 +2,7 @@ import axios from 'axios';
 // import fetch from 'node-fetch'
 import { supabase } from '../lib/supabase';
 
-const API_BASE_URL = 'https://andreacontrollerapi.onrender.com'
+const API_BASE_URL = 'https://andreacontrollerapi-4fds.onrender.com'
 
 // Configurações de retry e fallback
 const MAX_RETRIES = 3

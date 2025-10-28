@@ -12,28 +12,38 @@ export default function Gestao() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header usuario="Andrea" pagina={t('management')} />
+      <Header usuario="Andrea" pagina={t("management")} />
 
-      <View style={styles.contentCenter}>
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity
-            style={styles.gestaoButton}
-            onPress={() => router.push("/chamadas")}
-            activeOpacity={0.85}
-          >
-            <Icon name="plus" size={70} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}>{t('registerCallButton')}</Text>
-          </TouchableOpacity>
+      <View style={styles.buttonsContainer}>
+        {/* Registrar Entrega */}
+        <TouchableOpacity
+          style={styles.gestaoButton}
+          onPress={() => router.push("/chamadas")}
+          activeOpacity={0.85}
+        >
+          <Icon name="plus" size={50} color="#fff" style={styles.icon} />
+          <Text style={styles.buttonText}>Registrar Entrega</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gestaoButton}
-            onPress={() => router.push("/devolucao")}
-            activeOpacity={0.85}
-          >
-            <Icon name="cart-arrow-up" size={70} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}>{t('registerReturnButton')}</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Registrar Devolução */}
+        <TouchableOpacity
+          style={styles.gestaoButton}
+          onPress={() => router.push("/devolucao")}
+          activeOpacity={0.85}
+        >
+          <Icon name="cart-arrow-up" size={50} color="#fff" style={styles.icon} />
+          <Text style={styles.buttonText}>{t("registerReturnButton")}</Text>
+        </TouchableOpacity>
+
+        {/* Histórico de Gestão */}
+        <TouchableOpacity
+          style={styles.gestaoButton}
+          onPress={() => router.push("/historico_gestao")}
+          activeOpacity={0.85}
+        >
+          <Icon name="clock-outline" size={50} color="#fff" style={styles.icon} />
+          <Text style={styles.buttonText}>Histórico de Gestão</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.bottomNavContainer}>
@@ -46,38 +56,35 @@ export default function Gestao() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  contentCenter: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#fff",
   },
   buttonsContainer: {
-    width: "90%",
+    marginTop: -70,
+    flex: 1,
+    justifyContent: "center", // centraliza o grupo de botões
     alignItems: "center",
+    paddingHorizontal: 20,
+    gap: 15,
   },
   gestaoButton: {
     backgroundColor: "#FF9800",
-    borderRadius: 16,
+    borderRadius: 15,
     width: "100%",
-    height: "42%",
-    paddingVertical: 40,
+    height: "22%",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 8,
+    elevation: 6,
   },
   icon: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 27,
+    fontSize: 22,
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -88,4 +95,5 @@ const styles = StyleSheet.create({
     right: 0,
   },
 });
+
 
