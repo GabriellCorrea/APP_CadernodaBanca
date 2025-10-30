@@ -7,7 +7,6 @@ const API_BASE_URL = 'https://andreacontrollerapi-4fds.onrender.com'
 // Configurações de retry e fallback
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000 // 1 segundo
-const FALLBACK_TIMEOUT = 5000 // 5 segundos
 
 // Função auxiliar para retry com backoff exponencial
 const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = MAX_RETRIES): Promise<any> => {
@@ -80,11 +79,18 @@ export async function buscarVendasDoDia() {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: FALLBACK_TIMEOUT,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Adiciona o token do Supabase nas requisições
+// Instância separada para uploads sem timeout
+const apiUpload = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'multipart/form-data' },
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
+})
+
+// Adiciona o token do Supabase nas requisições (instância principal)
 api.interceptors.request.use(async (config) => {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
@@ -120,6 +126,39 @@ api.interceptors.response.use(
       console.error('🔌 Conexão com banco de dados terminada inesperadamente')
     } else if (!err.response) {
       console.error('🌐 Erro de rede - verifique sua conexão')
+    }
+
+    throw err
+  }
+)
+
+// Interceptors para instância de upload
+apiUpload.interceptors.request.use(async (config) => {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  console.log('🔐 Token upload:', token ? `${token.substring(0, 20)}...` : 'Nenhum')
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+
+apiUpload.interceptors.response.use(
+  (res) => {
+    console.log('✅ Upload resposta:', res.status, res.config?.url)
+    return res
+  },
+  (err) => {
+    console.error('❌ Erro upload:')
+    console.error('  - Status:', err.response?.status)
+    console.error('  - URL:', err.config?.url?.substring(0, 50))
+    console.error('  - Código:', err.code)
+
+    if (err.code === 'ECONNABORTED') {
+      console.error('⏰ Timeout no upload')
     }
 
     throw err
@@ -316,6 +355,10 @@ export const apiService = {
      * (Era 'cadastrarChamada')
      */
     async cadastrar(file: any) {
+      console.log('📤 Iniciando upload...')
+      console.log('📄', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`)
+      console.log('🚀 Enviando para servidor...')
+      
       const formData = new FormData()
       // @ts-ignore
       formData.append('file', {
@@ -324,9 +367,14 @@ export const apiService = {
         type: file.mimeType || 'application/pdf',
       })
 
-      const res = await api.post('/chamadas/cadastrar-chamada', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const startTime = Date.now();
+      
+      // Usar a instância apiUpload sem timeout
+      const res = await apiUpload.post('/chamadas/cadastrar-chamada', formData)
+      
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000;
+      console.log(`✅ Upload concluído em ${duration.toFixed(1)}s`)
 
       return res.data
     },
@@ -336,8 +384,36 @@ export const apiService = {
      * (Era 'listarChamadasUsuario')
      */
     async listarPorUsuario(usuarioId: string) {
-      const res = await api.get(`/chamadas/listar-chamadas-usuario?usuarioId=${usuarioId}`)
-      return toArray(res.data, 'data')
+      try {
+        return await retryWithBackoff(async () => {
+          const res = await api.get(`/chamadas/listar-chamadas-usuario?usuarioId=${usuarioId}`)
+          return toArray(res.data, 'data')
+        })
+      } catch (error: any) {
+        console.error('❌ Erro ao listar chamadas do usuário:', error?.response?.status, error?.response?.data || error.message)
+        // Se for erro de servidor, tentar alguns fallbacks simples (diferença no nome do query param)
+        const status = error?.response?.status
+        if (status >= 500) {
+          try {
+            console.log('🔁 Tentando fallback com parametro usuario_id...')
+            const res2 = await api.get(`/chamadas/listar-chamadas-usuario?usuario_id=${usuarioId}`)
+            return toArray(res2.data, 'data')
+          } catch (err2) {
+            console.error('❌ Fallback usuario_id falhou:', (err2 as any)?.response?.status)
+          }
+
+          try {
+            console.log('🔁 Tentando fallback com parametro userId...')
+            const res3 = await api.get(`/chamadas/listar-chamadas-usuario?userId=${usuarioId}`)
+            return toArray(res3.data, 'data')
+          } catch (err3) {
+            console.error('❌ Fallback userId falhou:', (err3 as any)?.response?.status)
+          }
+        }
+
+        // Re-throw para que o chamador (UI) possa tratar e exibir mensagem apropriada
+        throw error
+      }
     },
   },
 

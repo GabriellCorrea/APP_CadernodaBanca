@@ -2,10 +2,12 @@ import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -15,12 +17,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { apiService } from "@/services/api";
 
 export default function Chamadas() {
   const { t } = useLanguage();
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
+  const [processingTime, setProcessingTime] = useState(0);
 
   const chamadas = [
     {
@@ -84,16 +89,95 @@ export default function Chamadas() {
   async function confirmarArquivo() {
     if (!arquivoSelecionado) return;
 
-    setShowModal(false);
-    try {
-      await apiService.chamadas.cadastrar(arquivoSelecionado);
+    // Log do arquivo selecionado
+    console.log('📁 Arquivo selecionado:');
+    console.log('  - Nome:', arquivoSelecionado.name);
+    console.log('  - Tamanho:', arquivoSelecionado.size, 'bytes');
+    console.log('  - Tamanho (MB):', (arquivoSelecionado.size / 1024 / 1024).toFixed(2), 'MB');
+    console.log('  - Tipo:', arquivoSelecionado.mimeType);
 
-      Alert.alert(t("success"), t("fileUploadSuccess"));
+    setShowModal(false);
+    setIsProcessing(true);
+    setProcessingStep(1);
+    
+    try {
+      console.log('📤 Iniciando upload do arquivo...');
+      await apiService.chamadas.cadastrar(arquivoSelecionado);
+      console.log('✅ Upload e processamento concluídos!');
+      
+      setIsProcessing(false);
+      setShowSuccessModal(true);
       setArquivoSelecionado(null);
-    } catch {
-      Alert.alert(t("error"), t("fileUploadError"));
+      
+      // Oculta modal de sucesso após 2 segundos
+      setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 2000);
+      
+    } catch (error: any) {
+      console.error('❌ Erro no upload:', error);
+      setIsProcessing(false);
+      
+      // Tratamento detalhado de erros
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        Alert.alert(
+          "Timeout", 
+          `O upload demorou mais que o esperado.\n\nPossíveis causas:\n• Arquivo muito grande\n• Conexão lenta\n• Servidor sobrecarregado\n\nTente:\n• Arquivo menor\n• Conexão mais estável\n• Aguardar alguns minutos`
+        );
+      } else if (error.response?.status === 413) {
+        Alert.alert(
+          "Arquivo muito grande", 
+          "O servidor rejeitou o arquivo por ser muito grande. Tente com um arquivo menor."
+        );
+      } else if (error.response?.status === 500 || error.code === 'SERVER_ERROR_500') {
+        const serverMessage = error.response?.data?.message || error.message || 'Erro desconhecido do servidor';
+        Alert.alert(
+          "Erro do Servidor (500)", 
+          `O servidor encontrou um problema ao processar o arquivo.\n\n` +
+          `Detalhes: ${serverMessage}\n\n` +
+          `Possíveis soluções:\n` +
+          `• Verifique se o arquivo não está corrompido\n` +
+          `• Tente novamente em alguns minutos\n` +
+          `• Use um arquivo diferente\n` +
+          `• Contate o suporte se o problema persistir`
+        );
+      } else if (error.response?.status === 401) {
+        Alert.alert(
+          "Não autorizado", 
+          "Sua sessão expirou. Faça login novamente."
+        );
+      } else if (!error.response && error.message?.includes('Network Error')) {
+        Alert.alert(
+          "Erro de rede", 
+          "Verifique sua conexão com a internet e tente novamente."
+        );
+      } else {
+        Alert.alert(
+          "Erro no upload", 
+          `${t("fileUploadError")}\n\nCódigo: ${error.code || 'N/A'}\nStatus: ${error.response?.status || 'N/A'}\nDetalhes: ${error.message || 'Erro desconhecido'}`
+        );
+      }
     }
   }
+
+  // Hook para contar tempo de processamento
+  useEffect(() => {
+    if (isProcessing) {
+      setProcessingTime(0);
+      const interval = setInterval(() => {
+        setProcessingTime(prev => prev + 1);
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isProcessing]);
+
+  // Função para formatar tempo
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
@@ -168,6 +252,40 @@ export default function Chamadas() {
                 <Text style={styles.modalBotaoTexto}>{t("confirm")}</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de processamento */}
+      <Modal transparent visible={isProcessing} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.modalTitulo}>
+              {t("processingFile")}
+            </Text>
+            <Text style={styles.modalTexto}>
+              {t("pleaseWaitSending")}
+            </Text>
+            <Text style={styles.timeCounter}>
+              {t("elapsedTime")} {formatTime(processingTime)}
+            </Text>
+            <Text style={styles.modalTexto}>
+              {arquivoSelecionado && `📁 ${arquivoSelecionado.name} (${(arquivoSelecionado.size / 1024 / 1024).toFixed(2)} MB)`}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de sucesso */}
+      <Modal transparent visible={showSuccessModal} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModalContent}>
+            <View style={styles.successIcon}>
+              <Ionicons name="checkmark-circle" size={60} color="#4CAF50" />
+            </View>
+            <Text style={styles.successTitle}>{t("fileUploaded")}</Text>
+            <Text style={styles.successMessage}>{t("fileUploadSuccess")}</Text>
           </View>
         </View>
       </Modal>
@@ -344,5 +462,37 @@ const styles = StyleSheet.create({
   modalBotaoTexto: {
     color: "#FFF",
     fontWeight: "600",
+  },
+  successModalContent: {
+    width: "80%",
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 30,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#4CAF50",
+  },
+  successIcon: {
+    marginBottom: 15,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#4CAF50",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  successMessage: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  timeCounter: {
+    fontSize: 14,
+    color: "#888",
+    marginTop: 10,
+    textAlign: "center",
+    fontWeight: "500",
   },
 });

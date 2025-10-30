@@ -39,8 +39,12 @@ const translations = {
     // Páginas
     reportsAndInsights: 'Relatórios e Insights',
     management: 'Gestão',
+    managementHistory: 'Histórico de Gestão',
     registerCallButton: 'Registrar\nChamada',
     registerReturnButton: 'Registrar\nDevolução',
+    lastDeliveries: 'Últimas Entregas Registradas',
+    lastReturns: 'Últimas Devoluções Registradas',
+    loadingDeliveries: 'Carregando entregas...',
     
     // Estoque
     searchMagazine: 'Buscar revista...',
@@ -59,6 +63,9 @@ const translations = {
     searchingProduct: 'Buscando produto...',
     confirmSale: 'Confirmar venda',
     processing: 'Processando...',
+    processingFile: 'Processando arquivo',
+    pleaseWaitSending: 'Por favor aguarde, enviando arquivo para o servidor...',
+    elapsedTime: 'Tempo decorrido:',
     newScan: 'Novo scan',
     code: 'Código',
     accessDenied: 'Acesso negado',
@@ -174,8 +181,12 @@ const translations = {
     // Páginas
     reportsAndInsights: 'Rapporti e Statistiche',
     management: 'Gestione',
+    managementHistory: 'Cronologia Gestione',
     registerCallButton: 'Registra\nChiamata',
     registerReturnButton: 'Registra\nReso',
+    lastDeliveries: 'Ultime Consegne Registrate',
+    lastReturns: 'Ultimi Resi Registrati',
+    loadingDeliveries: 'Caricamento consegne...',
     
     // Estoque
     searchMagazine: 'Cerca rivista...',
@@ -194,6 +205,9 @@ const translations = {
     searchingProduct: 'Ricerca prodotto...',
     confirmSale: 'Conferma vendita',
     processing: 'Elaborazione...',
+    processingFile: 'Elaborazione file',
+    pleaseWaitSending: 'Per favore attendi, invio del file al server...',
+    elapsedTime: 'Tempo trascorso:',
     newScan: 'Nuova scansione',
     code: 'Codice',
     accessDenied: 'Accesso negato',
@@ -309,8 +323,12 @@ const translations = {
     // Páginas
     reportsAndInsights: 'Reports and Analytics',
     management: 'Management',
+    managementHistory: 'Management History',
     registerCallButton: 'Register\nCall',
     registerReturnButton: 'Register\nReturn',
+    lastDeliveries: 'Last Registered Deliveries',
+    lastReturns: 'Last Registered Returns',
+    loadingDeliveries: 'Loading deliveries...',
     
     // Estoque
     searchMagazine: 'Search magazine...',
@@ -329,6 +347,9 @@ const translations = {
     searchingProduct: 'Searching product...',
     confirmSale: 'Confirm sale',
     processing: 'Processing...',
+    processingFile: 'Processing file',
+    pleaseWaitSending: 'Please wait, sending file to server...',
+    elapsedTime: 'Elapsed time:',
     newScan: 'New scan',
     code: 'Code',
     accessDenied: 'Access denied',
