@@ -341,6 +341,31 @@ export const apiService = {
     },
   },
 
+   /**
+    * Funções relacionadas a Entregas (PDFs).
+    */
+   entregas: {
+     /**
+      * Envia o PDF de uma nota de entrega para cadastro.
+      * (Implementa o endpoint de entregas.py)
+      */
+     async cadastrar(file: any) {
+       const formData = new FormData()
+       // @ts-ignore
+       formData.append('file', {
+         uri: file.uri,
+         name: file.name || 'entrega.pdf',
+         type: file.mimeType || 'application/pdf',
+       })
+
+       const res = await api.post('/entregas/cadastrar-entrega', formData, {
+         headers: { 'Content-Type': 'multipart/form-data' },
+       })
+
+       return res.data
+     },
+   },
+
   /**
    * Funções utilitárias.
    */
