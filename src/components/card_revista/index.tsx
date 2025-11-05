@@ -1,13 +1,14 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Image, Text, View } from "react-native";
+import { Image, Text, View, TouchableOpacity } from "react-native"; // Importado TouchableOpacity
 import { styles } from "./styles";
 
 type CardRevistaProps = {
-  imagem: string;
+  imagem: any; // Alterado de string para 'any' para aceitar {uri:...}, require() ou null
   titulo: string;
   preco: number;
   vendas: number;
   estoque: number;
+  onPress?: () => void; // Prop opcional para o clique
 };
 
 export function CardRevista({
@@ -16,16 +17,24 @@ export function CardRevista({
   preco,
   vendas,
   estoque,
+  onPress, // Recebe a prop
 }: CardRevistaProps) {
   const { t } = useLanguage();
-  
+
   return (
-    <View style={styles.card}>
+    // Envolvido o card com TouchableOpacity
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      disabled={!onPress} // Desabilitado se nenhuma função for passada
+      activeOpacity={0.8}
+    >
       <Image
             source={
-              typeof imagem === "string"
-                ? { uri: imagem }
-                : imagem
+              // Lógica atualizada para usar o placeholder se 'imagem' for nula ou indefinida
+              imagem
+                ? (typeof imagem === "string" ? { uri: imagem } : imagem) // Aceita string (URL antiga) ou objeto {uri} (nova API)
+                : require("../../../assets/images/imagem-placeholder.png") // Fallback
             }
             style={styles.imagem}
           />
@@ -38,12 +47,6 @@ export function CardRevista({
         <Text style={styles.textoCinza}>{t('salesLabel')}: {vendas}</Text>
         <Text style={styles.textoCinza}>{estoque} {t('units')}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
-
-
-
-
-
-

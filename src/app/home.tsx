@@ -4,12 +4,63 @@ import { UltimasVendas } from "@/components/UltimasVendas/UltimasVendas";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import { apiService } from "@/services/api";
+
+type VendaRecenteApi = any;
 
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
+
+  const [faturamento, setFaturamento] = useState<number>(0);
+  const [ultimasVendas, setUltimasVendas] = useState<VendaRecenteApi[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function carregarHomeData() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 1. Chama o novo endpoint unificado
+        // 'data' agora é a resposta direta, pois apiService.relatorios.home() já extrai res.data.data
+        const data = await apiService.relatorios.home();
+
+        // 2. Acessa o objeto 'data' (que é a própria resposta)
+        if (data) {
+          // 3. Atualiza os estados com os dados recebidos
+          setFaturamento(data.faturamento_do_dia || 0);
+
+          // Verifica se ultimas_vendas é um objeto (como no seu exemplo) ou array
+          if (Array.isArray(data.ultimas_vendas)) {
+            setUltimasVendas(data.ultimas_vendas);
+          } else if (typeof data.ultimas_vendas === 'object' && data.ultimas_vendas !== null) {
+            // Se for um objeto, converte para array
+            setUltimasVendas(Object.values(data.ultimas_vendas));
+          } else {
+            setUltimasVendas([]);
+          }
+
+        } else {
+          throw new Error("Formato de resposta inesperado da API.");
+        }
+
+      } catch (err: any) {
+        console.error("Erro ao buscar dados da home:", err);
+        setError(err.message || t("saleError")); // Mostra a mensagem de erro real
+        setFaturamento(0);
+        setUltimasVendas([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarHomeData();
+  }, [t]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -19,7 +70,7 @@ export default function Home() {
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollContentContainer}
       >
-        <MetaDoDia />
+        <MetaDoDia faturamentoDoDia={faturamento} />
 
         <TouchableOpacity
           style={styles.fixedRegistrarVendaBtn}
@@ -31,7 +82,11 @@ export default function Home() {
           </View>
         </TouchableOpacity>
 
-        <UltimasVendas />
+        {error && !loading && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
+
+        <UltimasVendas vendasRaw={ultimasVendas} loading={loading} />
       </ScrollView>
 
       <View style={styles.bottomNavContainer}>
@@ -89,4 +144,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginRight: 8,
   },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  }
 });

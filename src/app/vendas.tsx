@@ -5,214 +5,101 @@ import { apiService } from "@/services/api"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera"
 import { router } from "expo-router"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  TextInput,
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { Ionicons } from "@expo/vector-icons"
 
-export default function Vendas() {
-  const { t, currentLanguage } = useLanguage();
+// --- Tipos ---
+type ProdutoEstoque = {
+  id_revista: any
+  nome: string
+  preco_liquido: number
+  preco_capa?: number // Adicionado para consistência
+  imagem: any
+  codigo_barras?: string
+}
 
-  // Debug das traduções
-  console.log('🌐 Idioma atual:', currentLanguage);
-  console.log('🔧 Tradução debit:', t('debit'));
-  console.log('🔧 Tradução credit:', t('credit'));
+type VendaPorListaProps = {
+  onProdutoSelecionado: (produto: ProdutoEstoque) => void
+}
+
+// ========================================================================
+// COMPONENTE 1: ScannerView
+// (Definido dentro de vendas.tsx)
+// ========================================================================
+type ScannerViewProps = {
+  onProdutoSelecionado: (produto: any) => void
+  apiOnline: boolean
+}
+
+function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProps) {
+  const { t } = useLanguage()
   const [facing, setFacing] = useState<CameraType>("back")
-  const [codigoBarras, setCodigoBarras] = useState<string | null>(null)
-  const [produto, setProduto] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [scanned, setScanned] = useState(false)
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null)
   const [lastScanTime, setLastScanTime] = useState<number>(0)
   const [permission, requestPermission] = useCameraPermissions()
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
-  const [paymentMethodKey, setPaymentMethodKey] = useState<string | null>(null) // Chave padronizada para API
-  const [showPaymentTab, setShowPaymentTab] = useState(false)
-  const [apiOnline, setApiOnline] = useState(true) // Status da API
 
-  // Verifica autenticação e status da API quando entra na tela
-  useEffect(() => {
-    const checkAuth = async () => {
-      setProduto(null)
-      setCodigoBarras(null)
-      setScanned(false)
-
-      try {
-        const token = await AsyncStorage.getItem('access_token')
-
-        if (!token) {
-          Alert.alert(
-            t('accessDenied'),
-            t('loginRequired'),
-            [{ text: t('ok'), onPress: () => router.push("/") }]
-          )
-          return
-        }
-
-        // Verificar conectividade da API
-        console.log('🔍 Verificando conectividade da API...')
-        await apiService.utils.ping()
-        setApiOnline(true)
-        console.log('✅ API online')
-
-      } catch (error) {
-        console.error('❌ Erro na verificação da API:', error)
-        setApiOnline(false)
-
-        const token = await AsyncStorage.getItem('access_token')
-        if (!token) {
-          router.push("/")
-        } else {
-          // API offline mas token válido, continuar em modo offline
-          console.log('⚠️ Continuando em modo offline')
-        }
-      }
-    }
-
-    checkAuth()
-
-    // Verificar API a cada 30 segundos
-    const interval = setInterval(async () => {
-      try {
-        await apiService.utils.ping()
-        if (!apiOnline) {
-          setApiOnline(true)
-          console.log('✅ API voltou online')
-        }
-      } catch (error) {
-        if (apiOnline) {
-          setApiOnline(false)
-          console.log('❌ API ficou offline')
-        }
-      }
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [apiOnline])
-
-  // Busca produto pelo código de barras
   const buscarProduto = async (codigo: string) => {
     const agora = Date.now()
-
-    if (agora - lastScanTime < 2000) return
+    if (agora - lastScanTime < 2000) return // Throttle
     if (scanned || loading || codigo === lastScannedCode) return
-
-    // Validação e sanitização do código
-    if (!codigo || typeof codigo !== 'string') return
-
-    // Filtrar URLs do Expo e códigos inválidos
+    if (!codigo || typeof codigo !== "string") return
     const codigoLimpo = codigo.trim()
-    if (codigoLimpo.includes('://') || codigoLimpo.includes('exp://')) {
-      console.log('🚫 Código inválido ignorado (URL):', codigoLimpo)
-      return
-    }
-
-    if (codigoLimpo.length < 8 || codigoLimpo.length > 18) {
-      console.log('🚫 Código com tamanho inválido:', codigoLimpo.length)
-      return
-    }
-
-    // Verificar se é apenas números (códigos de barras válidos)
-    if (!/^\d+$/.test(codigoLimpo)) {
-      console.log('🚫 Código não numérico ignorado:', codigoLimpo)
-      return
-    }
+    if (codigoLimpo.includes("://") || codigoLimpo.includes("exp://")) return
+    if (codigoLimpo.length < 8 || codigoLimpo.length > 18) return
+    if (!/^\d+$/.test(codigoLimpo)) return
 
     setLastScanTime(agora)
     setScanned(true)
     setLoading(true)
     setLastScannedCode(codigoLimpo)
 
-    console.log('🔍 Buscando produto válido:', codigoLimpo)
-
     try {
       const data = await apiService.revistas.buscarPorCodigoBarras(codigoLimpo)
 
       if (!data) throw { response: { status: 404 } }
-
       const produtoEncontrado = data["data"] || data
-      if (!produtoEncontrado) throw { response: { status: 404 } }
 
-      setProduto(produtoEncontrado)
-      setCodigoBarras(codigoLimpo)
-      setShowPaymentTab(true)
+      if (!produtoEncontrado || !produtoEncontrado.id_revista) {
+        console.error("Produto encontrado sem ID de revista", produtoEncontrado)
+        throw { response: { status: 404 }, message: t("productNotRegistered") }
+      }
+
+      // CHAMA A FUNÇÃO PRINCIPAL
+      onProdutoSelecionado(produtoEncontrado)
 
       setTimeout(() => setScanned(false), 1000)
     } catch (error: any) {
-      console.error('❌ Erro na busca de produto:', {
-        codigo: codigoLimpo,
-        error: error.message,
-        status: error.response?.status,
-        data: error.response?.data
-      })
+      console.error("❌ Erro na busca de produto:", { error })
+      let mensagem = error.message || t("productNotFound")
+      if (error.response?.status === 404) mensagem = t("productNotRegistered")
 
-      setProduto(null)
-      setCodigoBarras(null)
-
-      let mensagem = t('productNotFound')
-      let titulo = t('error')
-      let showRetry = true
-
-      // Tratamento específico por tipo de erro
-      if (error.response?.status === 403) {
-        mensagem = t('authError')
-        titulo = 'Erro de Autenticação'
-        showRetry = false
-      } else if (error.response?.status === 404) {
-        mensagem = t('productNotRegistered')
-        titulo = 'Produto Não Encontrado'
-        showRetry = false
-      } else if (error.response?.status >= 500) {
-        mensagem = 'Servidor temporariamente indisponível. Tente novamente em alguns segundos.'
-        titulo = 'Problema no Servidor'
-        setApiOnline(false)
-      } else if (error.code === 'ECONNABORTED') {
-        mensagem = 'Conexão muito lenta. Verifique sua internet e tente novamente.'
-        titulo = 'Timeout'
-      } else if (error.message?.includes('ConnectionTerminated')) {
-        mensagem = 'Problema na conexão com o banco de dados. Tente novamente.'
-        titulo = 'Erro de Conexão'
-      } else if (!error.response) {
-        mensagem = 'Sem conexão com a internet. Verifique sua rede.'
-        titulo = 'Sem Conexão'
-        setApiOnline(false)
-      } else if (error.message) {
-        mensagem = error.message
-      }
-
-      const buttons = []
-      if (showRetry) {
-        buttons.push({
-          text: 'Tentar Novamente',
+      Alert.alert(t("error"), mensagem, [
+        {
+          text: "Cancelar",
+          style: "cancel" as const,
           onPress: () => {
-            setTimeout(() => {
-              setScanned(false)
-              setLastScannedCode(null)
-              buscarProduto(codigoLimpo)
-            }, 1000)
-          }
-        })
-      }
-      buttons.push({
-        text: 'Cancelar',
-        style: 'cancel' as const,
-        onPress: () => {
-          setScanned(false)
-          setLastScannedCode(null)
-        }
-      })
-
-      Alert.alert(titulo, mensagem, buttons)
-
+            setScanned(false)
+            setLastScannedCode(null)
+          },
+        },
+      ])
       setTimeout(() => {
         setScanned(false)
         setLastScannedCode(null)
@@ -222,451 +109,669 @@ export default function Vendas() {
     }
   }
 
-  // Reseta o scanner e limpa método de pagamento
-  const resetScanner = () => {
-    setProduto(null)
-    setCodigoBarras(null)
-    setScanned(false)
-    setLoading(false)
-    setLastScannedCode(null)
-    setLastScanTime(0)
-    setPaymentMethod(null)
-    setPaymentMethodKey(null)
-    setShowPaymentTab(false)
+  // --- Render de Permissão ---
+  if (!permission) return <View />
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center", padding: 20 }}>
+          {t("cameraPermissionNeeded")}
+        </Text>
+        <Pressable onPress={requestPermission} style={styles.botao}>
+          <Text style={styles.botaoTexto}>{t("allow")}</Text>
+        </Pressable>
+      </View>
+    )
   }
 
-  // Confirma venda
+  // --- Render do Scanner ---
+  return (
+    <>
+      <CameraView
+        style={styles.fotoBox}
+        facing={facing}
+        barcodeScannerSettings={{
+          barcodeTypes: ["code128", "ean13", "ean8", "qr"],
+        }}
+        onBarcodeScanned={(result) => {
+          if (result.data) buscarProduto(result.data)
+        }}
+      />
+      {!loading && (
+        <View style={styles.statusInfo}>
+          <Text style={styles.statusTexto}>
+            {scanned ? t("waiting") : t("scanBarcode")}
+          </Text>
+        </View>
+      )}
+      {loading && (
+        <View style={styles.statusInfo}>
+          <ActivityIndicator size="large" color="#E67E22" />
+          <Text style={styles.statusTexto}>{t("searchingProduct")}</Text>
+        </View>
+      )}
+    </>
+  )
+}
+
+// ========================================================================
+// COMPONENTE 2: VendaPorLista
+// (Definido dentro de vendas.tsx)
+// ========================================================================
+function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
+  const { t } = useLanguage()
+  const [produtos, setProdutos] = useState<ProdutoEstoque[]>([])
+  const [busca, setBusca] = useState("")
+  const [loadingProdutos, setLoadingProdutos] = useState(true)
+
+  useEffect(() => {
+    async function carregarEstoque() {
+      try {
+        setLoadingProdutos(true)
+        const data = await apiService.revistas.estoque()
+        setProdutos(data || [])
+      } catch (error) {
+        console.error("Erro ao carregar estoque para venda:", error)
+        Alert.alert(t("error"), "Não foi possível carregar os produtos.")
+      } finally {
+        setLoadingProdutos(false)
+      }
+    }
+    carregarEstoque()
+  }, [t])
+
+  const produtosFiltrados = useMemo(() => {
+    if (!busca) return produtos
+    return produtos.filter((p) =>
+      p.nome.toLowerCase().includes(busca.toLowerCase())
+    )
+  }, [busca, produtos])
+
+  const renderItem = ({ item }: { item: ProdutoEstoque }) => (
+    <TouchableOpacity
+      style={styles.itemLista}
+      onPress={() => onProdutoSelecionado(item)} // CHAMA A FUNÇÃO PRINCIPAL
+    >
+      <Image
+        source={
+          item.imagem
+            ? typeof item.imagem === "string"
+              ? { uri: item.imagem }
+              : item.imagem
+            : require("../../assets/images/imagem-placeholder.png")
+        }
+        style={styles.itemImagem}
+      />
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemNome}>{item.nome}</Text>
+        <Text style={styles.itemPreco}>
+          R$ {(item.preco_liquido || 0).toFixed(2)}
+        </Text>
+      </View>
+      <Ionicons name="add-circle" size={32} color="#E67E22" />
+    </TouchableOpacity>
+  )
+
+  return (
+    <View style={styles.listaContainer}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={t("searchMagazine")}
+          placeholderTextColor="#666"
+          value={busca}
+          onChangeText={setBusca}
+        />
+      </View>
+      {loadingProdutos ? (
+        <ActivityIndicator
+          size="large"
+          color="#E67E22"
+          style={{ marginTop: 20 }}
+        />
+      ) : (
+        <FlatList
+          data={produtosFiltrados}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id_revista.toString()}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListEmptyComponent={
+            <Text style={styles.listaVaziaText}>{t("noMagazineFound")}</Text>
+          }
+        />
+      )}
+    </View>
+  )
+}
+
+// ========================================================================
+// COMPONENTE 3: ConfirmarVendaView
+// (Definido dentro de vendas.tsx)
+// ========================================================================
+type ConfirmarVendaViewProps = {
+  produto: ProdutoEstoque
+  onCancelar: () => void
+  apiOnline: boolean
+  setApiOnline: (status: boolean) => void
+}
+
+function ConfirmarVendaView({
+  produto,
+  onCancelar,
+  apiOnline,
+  setApiOnline,
+}: ConfirmarVendaViewProps) {
+  const { t } = useLanguage()
+  const [quantidade, setQuantidade] = useState("1")
+  const [desconto, setDesconto] = useState("0")
+  const [metodoPagamento, setMetodoPagamento] = useState<string | null>(null) // "Débito", "Crédito", "Pix", "Dinheiro"
+  const [loading, setLoading] = useState(false)
+
+  // Cálculo do valor total
+  const valorTotal = useMemo(() => {
+    const preco = parseFloat(
+      (produto.preco_capa || produto.preco_liquido || 0).toString()
+    )
+    const qtd = parseInt(quantidade) || 0
+    const desc = parseFloat(desconto.replace(",", ".")) || 0 // Aceita vírgula
+    return Math.max(0, preco * qtd - desc)
+  }, [produto, quantidade, desconto])
+
   const handleConfirmarVenda = async () => {
-    if (!produto || !codigoBarras) {
-      Alert.alert(t('error'), t('scanProductFirst'))
+    // 1. Validação
+    if (!metodoPagamento) {
+      Alert.alert(t("error"), "Por favor, selecione um método de pagamento.")
       return
     }
-
-    if (!paymentMethod || !paymentMethodKey) {
-      Alert.alert(t('error'), t('paymentWarning'))
-      setShowPaymentTab(true)
+    const qtdNum = parseInt(quantidade)
+    if (isNaN(qtdNum) || qtdNum <= 0) {
+      Alert.alert(t("error"), "Quantidade deve ser um número maior que zero.")
+      return
+    }
+    const descNum = parseFloat(desconto.replace(",", ".")) || 0
+    if (isNaN(descNum) || descNum < 0) {
+      Alert.alert(t("error"), "Desconto inválido. Use 0 se não houver desconto.")
+      return
+    }
+    if (valorTotal < 0) {
+      Alert.alert(
+        t("error"),
+        "Valor total não pode ser negativo. Verifique o desconto."
+      )
       return
     }
 
     setLoading(true)
+
+    // 2. Montar Payload (Conforme especificado)
+    const payload = {
+      id_revista: produto.id_revista,
+      metodo_pagamento: metodoPagamento,
+      qtd_vendida: qtdNum,
+      desconto_aplicado: descNum,
+      valor_total: valorTotal,
+      data_venda: new Date().toISOString(),
+    }
+
+    console.log("🚀 Enviando Payload de Venda:", payload)
+
+    // 3. Enviar API
     try {
-      const preco = produto.preco_capa || produto.preco_liquido || produto.preco || 0
-      const precoNumerico = parseFloat(preco.toString()) || 0
-
-      const agora = new Date()
-      const dataFormatada = agora.toISOString().split('T')[0]
-
-      // Validação mais rigorosa dos dados
-      const vendaData = {
-        metodo_pagamento: paymentMethodKey, // Usa a chave padronizada em vez da tradução
-        codigo_barras: codigoBarras.toString().trim(),
-        qtd_vendida: 1,
-        desconto_aplicado: 0,
-        valor_total: precoNumerico,
-        data_venda: dataFormatada,
-      }
-
-      console.log('🔧 Dados da venda completos:', {
-        metodo_pagamento_display: paymentMethod,
-        metodo_pagamento_api: paymentMethodKey,
-        idioma_atual: currentLanguage,
-        produto_info: {
-          nome: produto.nome,
-          preco_capa: produto.preco_capa,
-          preco_liquido: produto.preco_liquido,
-          preco: produto.preco
-        },
-        dados_finais: vendaData,
-        metodos_aceitos_api: ['Débito', 'Crédito', 'Pix', 'Dinheiro'],
-        validacao_metodo: ['Débito', 'Crédito', 'Pix', 'Dinheiro'].includes(vendaData.metodo_pagamento)
-      })
-
-      // Validações robustas
-      if (!vendaData.codigo_barras || vendaData.codigo_barras.length < 3) {
-        throw new Error(`Código de barras inválido: "${vendaData.codigo_barras}"`)
-      }
-      if (!vendaData.valor_total || vendaData.valor_total <= 0 || isNaN(vendaData.valor_total)) {
-        throw new Error(`Valor do produto inválido: ${vendaData.valor_total} (tipo: ${typeof vendaData.valor_total})`)
-      }
-      if (!vendaData.data_venda) {
-        throw new Error('Data da venda não informada')
-      }
-      if (!vendaData.metodo_pagamento || vendaData.metodo_pagamento.trim() === '') {
-        throw new Error(`Método de pagamento inválido: "${vendaData.metodo_pagamento}"`)
-      }
-
-      // Validação adicional dos métodos aceitos pela API
-      const metodosAceitos = ['Débito', 'Crédito', 'Pix', 'Dinheiro']
-      if (!metodosAceitos.includes(vendaData.metodo_pagamento)) {
-        throw new Error(`Método de pagamento não reconhecido: "${vendaData.metodo_pagamento}". Métodos aceitos pela API: ${metodosAceitos.join(', ')}`)
-      }
-
-      // Tentar cadastrar venda com retry
-      console.log('🚀 Iniciando cadastro de venda...')
-      await apiService.revistas.buscarPorCodigoBarras(vendaData.codigo_barras)
-
-      console.log('✅ Venda cadastrada com sucesso!')
-      setApiOnline(true) // API funcionou, marcar como online
-
-      Alert.alert(t('success'), t('saleConfirmed'), [
-        {
-          text: t('ok'),
-          onPress: () => resetScanner()
-        }
+      await apiService.vendas.cadastrarPorId(payload)
+      setApiOnline(true)
+      Alert.alert(t("success"), t("saleConfirmed"), [
+        { text: t("ok"), onPress: onCancelar }, // 'onCancelar' reseta o state principal
       ])
     } catch (error: any) {
-      console.error('❌ Erro detalhado na venda:', {
+      console.error("❌ Erro detalhado na venda:", {
         error: error,
         response: error.response?.data,
         status: error.response?.status,
-        headers: error.response?.headers,
-        config: error.config
       })
 
-      let mensagemErro = t('saleError')
-      let titulo = t('error')
-
-      // Tratamento específico por tipo de erro
-      if (error.response?.status === 500) {
-        mensagemErro = `Erro interno do servidor (500). ${error.response?.data?.message || 'Tente novamente em alguns minutos.'}`
-        titulo = 'Problema no Servidor'
-      } else if (error.response?.status === 422) {
-        const errorDetail = error.response?.data?.detail
-        let specificError = 'Verifique o método de pagamento.'
-
-        if (errorDetail && Array.isArray(errorDetail) && errorDetail[0]?.msg) {
-          specificError = errorDetail[0].msg
+      let mensagemErro = t("saleError")
+      if (error.response?.status === 422) {
+        const details = error.response?.data?.detail
+        if (Array.isArray(details) && details[0]?.msg) {
+          const field = details[0].loc?.[1] || "desconhecido"
+          mensagemErro = `Dados inválidos: ${details[0].msg} (Campo: ${field})`
+        } else {
+          mensagemErro = `Dados inválidos (422). Verifique o payload enviado.`
         }
-
-        mensagemErro = `Dados rejeitados (422): ${specificError}\n\nMétodo atual: ${paymentMethodKey}\nMétodos aceitos: Débito, Crédito, Pix, Dinheiro`
-        titulo = 'Método de Pagamento Inválido'
-      } else if (error.response?.status === 400) {
-        mensagemErro = `Dados inválidos (400): ${error.response?.data?.message || 'Verifique as informações do produto.'}`
-        titulo = 'Dados Inválidos'
-      } else if (error.response?.status === 403) {
-        mensagemErro = 'Sem permissão para registrar vendas. Faça login novamente.'
-        titulo = 'Erro de Autenticação'
-      } else if (error.response?.status === 404) {
-        mensagemErro = 'Endpoint não encontrado. Verifique a configuração da API.'
-        titulo = 'Erro de Configuração'
-      } else if (error.code === 'ECONNABORTED') {
-        mensagemErro = 'Conexão muito lenta. A venda pode não ter sido registrada. Verifique sua internet.'
-        titulo = 'Timeout'
-      } else if (error.message?.includes('ConnectionTerminated')) {
-        mensagemErro = 'Problema na conexão com o banco de dados. A venda não foi registrada.'
-        titulo = 'Erro de Conexão'
       } else if (!error.response) {
-        mensagemErro = 'Sem conexão com a internet. A venda não foi registrada.'
-        titulo = 'Sem Conexão'
+        mensagemErro = "Sem conexão com a internet."
+        setApiOnline(false)
       } else if (error.message) {
         mensagemErro = `Erro: ${error.message}`
       }
 
-      // Log adicional para debug
-      console.error('🔴 Erro final processado:', { titulo, mensagemErro })
-
-      // Atualizar status da API baseado no erro
-      if (error.response?.status >= 500 || !error.response) {
-        setApiOnline(false)
-      }
-
-      const buttons = []
-
-      // Só mostrar retry para erros temporários
-      if (error.response?.status >= 500 ||
-          error.code === 'ECONNABORTED' ||
-          error.message?.includes('ConnectionTerminated') ||
-          !error.response) {
-        buttons.push({
-          text: 'Tentar Novamente',
-          onPress: () => {
-            setTimeout(() => handleConfirmarVenda(), 1000)
-          }
-        })
-      }
-
-      buttons.push({
-        text: 'Cancelar',
-        style: 'cancel' as const
-      })
-
-      Alert.alert(titulo, mensagemErro, buttons)
+      Alert.alert(t("error"), mensagemErro, [
+        { text: "Cancelar", style: "cancel" },
+      ])
     } finally {
       setLoading(false)
     }
   }
 
-  // Mapeia métodos de pagamento traduzidos para valores aceitos pela API
-  const getPaymentMethodKey = (translatedMethod: string): string => {
-    // A API aceita EXATAMENTE: 'Débito', 'Crédito', 'Dinheiro' ou 'Pix'
-    const methodMap: Record<string, string> = {
-      // Português
-      'Débito': 'Débito',
-      'Crédito': 'Crédito',
-      'Pix': 'Pix',
-      'Dinheiro': 'Dinheiro',
-      // Italiano
-      'Debito': 'Débito',
-      'Credito': 'Crédito',
-      'Contanti': 'Dinheiro',
-      // Inglês
-      'Debit': 'Débito',
-      'Credit': 'Crédito',
-      'Cash': 'Dinheiro'
+  const precoUnitario = parseFloat(
+    (produto.preco_capa || produto.preco_liquido || 0).toString()
+  ).toFixed(2)
+
+  return (
+    <View style={styles.confirmationContainer}>
+      <Text style={styles.confirmTitle}>{t("confirmSale")}</Text>
+
+      {/* Detalhes do Produto */}
+      <View style={styles.produtoInfo}>
+        <Text style={styles.produtoNome}>{produto.nome}</Text>
+        <Text style={styles.produtoPreco}>
+          Preço Unitário: R$ {precoUnitario}
+        </Text>
+        {produto.codigo_barras && (
+           <Text style={styles.codigoBarras}>{t('code')}: {produto.codigo_barras}</Text>
+        )}
+      </View>
+
+      {/* Inputs */}
+      <View style={styles.inputRow}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Quantidade</Text>
+          <TextInput
+            style={styles.input}
+            value={quantidade}
+            onChangeText={setQuantidade}
+            keyboardType="numeric"
+            selectTextOnFocus
+          />
+        </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Desconto (R$)</Text>
+          <TextInput
+            style={styles.input}
+            value={desconto}
+            onChangeText={setDesconto}
+            keyboardType="decimal-pad"
+            selectTextOnFocus
+          />
+        </View>
+      </View>
+
+      {/* Pagamento */}
+      <Text style={styles.label}>Método de Pagamento</Text>
+      <View style={styles.paymentOptionsRow}>
+        <TouchableOpacity
+          style={[
+            styles.paymentOption,
+            metodoPagamento === "Débito" && styles.paymentOptionSelected,
+            { backgroundColor: "#E8F6EA" },
+          ]}
+          onPress={() => setMetodoPagamento("Débito")}
+        >
+          <Text style={[styles.paymentOptionText, { color: "#2E7D32" }]}>
+            {t("debit")}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.paymentOption,
+            metodoPagamento === "Crédito" && styles.paymentOptionSelected,
+            { backgroundColor: "#FDECEA" },
+          ]}
+          onPress={() => setMetodoPagamento("Crédito")}
+        >
+          <Text style={[styles.paymentOptionText, { color: "#C62828" }]}>
+            {t("credit")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.paymentOptionsRow}>
+        <TouchableOpacity
+          style={[
+            styles.paymentOption,
+            metodoPagamento === "Pix" && styles.paymentOptionSelected,
+          ]}
+          onPress={() => setMetodoPagamento("Pix")}
+        >
+          <Text style={[styles.paymentOptionText, { color: "#000" }]}>
+            {t("pix")}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.paymentOption,
+            metodoPagamento === "Dinheiro" && styles.paymentOptionSelected,
+          ]}
+          onPress={() => setMetodoPagamento("Dinheiro")}
+        >
+          <Text style={[styles.paymentOptionText, { color: "#000" }]}>
+            {t("cash")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Total */}
+      <View style={styles.totalContainer}>
+        <Text style={styles.totalLabel}>Valor Total:</Text>
+        <Text style={styles.totalValor}>R$ {valorTotal.toFixed(2)}</Text>
+      </View>
+
+      {/* Ações */}
+      <View style={[styles.botoesContainer, { marginTop: 20 }]}>
+        <TouchableOpacity
+          style={[styles.botaoAcao, styles.botaoCancelar]}
+          onPress={onCancelar}
+          disabled={loading}
+        >
+          <Text style={styles.botaoCancelarTexto}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.botaoAcao,
+            styles.fixedRegistrarVendaBtn,
+            (loading || !metodoPagamento) && styles.botaoDisabled,
+          ]}
+          onPress={handleConfirmarVenda}
+          disabled={loading || !metodoPagamento}
+        >
+          <Text style={styles.fixedRegistrarVendaBtnText}>
+            {loading ? t("processing") : t("confirmSale")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}
+
+// ========================================================================
+// COMPONENTE PRINCIPAL: Vendas
+// (Este é o `export default` do arquivo `vendas.tsx`)
+// ========================================================================
+export default function Vendas() {
+  const { t } = useLanguage()
+  const [apiOnline, setApiOnline] = useState(true)
+
+  // Estado principal que controla a tela
+  const [produtoSelecionado, setProdutoSelecionado] =
+    useState<ProdutoEstoque | null>(null)
+
+  // Estado que controla o seletor (scanner ou lista)
+  const [viewMode, setViewMode] = useState<"scanner" | "list">("scanner")
+
+  // Efeito para checar auth e API
+  useEffect(() => {
+    const checkAuthAndApi = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token")
+        if (!token) {
+          Alert.alert(
+            t("accessDenied"),
+            t("loginRequired"),
+            [{ text: t("ok"), onPress: () => router.push("/") }]
+          )
+          return
+        }
+        await apiService.utils.ping()
+        setApiOnline(true)
+      } catch (error) {
+        setApiOnline(false)
+        const token = await AsyncStorage.getItem("access_token")
+        if (!token) router.push("/")
+      }
     }
+    checkAuthAndApi()
+  }, [t])
 
-    const key = methodMap[translatedMethod] || 'Dinheiro' // fallback para Dinheiro
-    console.log('🔄 Mapeamento de método:', translatedMethod, '→', key)
-    return key
-  }
-
-  // Função para selecionar método de pagamento
-  const selectPaymentMethod = (method: string) => {
-    const translatedMethod = method
-    const methodKey = getPaymentMethodKey(translatedMethod)
-    setPaymentMethod(translatedMethod)
-    setPaymentMethodKey(methodKey)
-    console.log('🔧 Método selecionado:', translatedMethod, '→ Chave API:', methodKey)
-  }
-
-  // Função chamada quando o usuário confirma o método de pagamento na aba/modal
-  const confirmarMetodoPagamento = () => {
-    if (!paymentMethod || !paymentMethodKey) {
-      Alert.alert('Erro', 'Selecione uma forma de pagamento.')
+  // Função para "navegar" para a tela de confirmação
+  const handleProdutoSelecionado = (produto: any) => {
+    if (!produto || !produto.id_revista) {
+      Alert.alert(t("error"), "Produto inválido ou não registrado corretamente.")
       return
     }
-    setShowPaymentTab(false)
+    setProdutoSelecionado(produto)
   }
 
-  if (!permission) return <View />
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.wrapper}>
-        <View style={styles.container}>
-          <Text style={{ textAlign: "center" }}>{t('cameraPermissionNeeded')}</Text>
-          <Pressable onPress={requestPermission} style={styles.botao}>
-            <Text style={styles.botaoTexto}>{t('allow')}</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    )
+  // Função para "voltar" para a tela de seleção
+  const handleCancelarVenda = () => {
+    setProdutoSelecionado(null)
   }
 
-  // Render principal
+  // Render Principal
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina={t('salesPage')} />
+      <Header usuario="Andrea" pagina={t("salesPage")} />
 
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <View style={styles.container}>
           <View style={styles.card}>
-            <CameraView
-              style={styles.fotoBox}
-              facing={facing}
-              barcodeScannerSettings={{
-                barcodeTypes: ['code128', 'ean13', 'ean8', 'qr'],
-              }}
-              onBarcodeScanned={(result) => {
-                if (result.data) buscarProduto(result.data)
-              }}
-            />
-
             {/* Status da API */}
             {!apiOnline && (
-              <View style={[styles.statusInfo, { backgroundColor: '#fff3cd', borderLeftColor: '#ffc107' }]}>
-                <Text style={[styles.statusTexto, { color: '#856404' }]}>
-                  ⚠️ API temporariamente indisponível. Algumas funções podem não funcionar.
+              <View
+                style={[
+                  styles.statusInfo,
+                  {
+                    backgroundColor: "#fff3cd",
+                    borderLeftColor: "#ffc107",
+                    minHeight: 0,
+                    padding: 10,
+                    marginBottom: 10
+                  },
+                ]}
+              >
+                <Text style={[styles.statusTexto, { color: "#856404", marginTop: 0 }]}>
+                  ⚠️ API indisponível.
                 </Text>
               </View>
             )}
 
-            {/* Status */}
-            {!produto && !loading && (
-              <View style={styles.statusInfo}>
-                <Text style={styles.statusTexto}>
-                  {scanned ? t('waiting') : t('scanBarcode')}
-                </Text>
-              </View>
-            )}
-
-            {loading && (
-              <View style={styles.statusInfo}>
-                <ActivityIndicator size="large" color="#E67E22" />
-                <Text style={styles.statusTexto}>{t('searchingProduct')}</Text>
-              </View>
-            )}
-
-            {produto && (
+            {/* RENDER CONDICIONAL */}
+            {!produtoSelecionado ? (
+              // --- TELA 1: SELEÇÃO DE PRODUTO ---
               <>
-                <View style={styles.produtoInfo}>
-                  <Text style={styles.produtoNome}>{produto.nome}</Text>
-                  <Text style={styles.produtoPreco}>
-                    R$ {parseFloat(produto.preco_capa || 0).toFixed(2)}
-                  </Text>
-                  <Text style={styles.codigoBarras}>{t('code')}: {codigoBarras}</Text>
-
-                  {/* Mostra método selecionado (se houver) */}
-                  {paymentMethod ? (
-                    <View style={styles.selectedPaymentRow}>
-                      <Text style={styles.selectedPaymentLabel}>{t('paymentMethodLabel')}:</Text>
-                      <View style={[
-                        styles.paymentBadge,
-                        paymentMethod === t('debit') && styles.paymentDebit,
-                        paymentMethod === t('credit') && styles.paymentCredit,
-                        (paymentMethod === t('pix') || paymentMethod === t('cash')) && styles.paymentBlack
-                      ]}>
-                        <Text style={styles.paymentBadgeText}>{paymentMethod}</Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <Text style={{ marginTop: 8, color: "#666" }}>Nenhuma forma de pagamento selecionada</Text>
-                  )}
+                <View style={styles.viewModeSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.viewModeButton,
+                      viewMode === "scanner" && styles.viewModeButtonActive,
+                    ]}
+                    onPress={() => setViewMode("scanner")}
+                  >
+                    <Ionicons
+                      name="camera-outline"
+                      size={20}
+                      color={viewMode === "scanner" ? "#fff" : "#E67E22"}
+                    />
+                    <Text
+                      style={[
+                        styles.viewModeText,
+                        viewMode === "scanner" && styles.viewModeTextActive,
+                      ]}
+                    >
+                      Scanner
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.viewModeButton,
+                      viewMode === "list" && styles.viewModeButtonActive,
+                    ]}
+                    onPress={() => setViewMode("list")}
+                  >
+                    <Ionicons
+                      name="list-outline"
+                      size={20}
+                      color={viewMode === "list" ? "#fff" : "#E67E22"}
+                    />
+                    <Text
+                      style={[
+                        styles.viewModeText,
+                        viewMode === "list" && styles.viewModeTextActive,
+                      ]}
+                    >
+                      Lista
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
-                {/* NOTE: o modal é controlado por showPaymentTab; mantive a mesma lógica de seleção */}
+                {viewMode === "scanner" && (
+                  <ScannerView
+                    onProdutoSelecionado={handleProdutoSelecionado}
+                    apiOnline={apiOnline}
+                  />
+                )}
+
+                {viewMode === "list" && (
+                  <VendaPorLista
+                    onProdutoSelecionado={handleProdutoSelecionado}
+                  />
+                )}
               </>
+            ) : (
+              // --- TELA 2: CONFIRMAÇÃO DE VENDA ---
+              <ConfirmarVendaView
+                produto={produtoSelecionado}
+                onCancelar={handleCancelarVenda}
+                apiOnline={apiOnline}
+                setApiOnline={setApiOnline}
+              />
             )}
-
-            {/* Botões */}
-            <View style={styles.botoesContainer}>
-              <TouchableOpacity
-                style={[styles.botaoAcao, styles.fixedRegistrarVendaBtn, (!produto || loading) && styles.botaoDisabled]}
-                onPress={handleConfirmarVenda}
-                disabled={loading || !produto}
-              >
-                <Text style={styles.fixedRegistrarVendaBtnText}>
-                  {loading ? t('processing') : t('confirmSale')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.botaoAcao, styles.fixedRegistrarVendaBtn]}
-                onPress={resetScanner}
-                disabled={loading}
-              >
-                <Text style={styles.fixedRegistrarVendaBtnText}>{t('newScan')}</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAvoidingView>
 
       <BottomNav />
-
-      {/* Modal POPUP para seleção de Método de Pagamento */}
-      <Modal
-        visible={showPaymentTab}
-        animationType="fade"
-        transparent
-        onRequestClose={() => {
-          // fecha modal pelo botão de hardware (Android)
-          setPaymentMethod(null)
-          setPaymentMethodKey(null)
-          setShowPaymentTab(false)
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.paymentTabTitle}>{t('paymentMethodTitle')}</Text>
-
-            <View style={styles.paymentOptionsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.paymentOption,
-                  paymentMethod === t('debit') ? styles.paymentOptionSelected : null,
-                  { backgroundColor: '#E8F6EA' }
-                ]}
-                onPress={() => selectPaymentMethod(t('debit'))}
-              >
-                <Text style={[styles.paymentOptionText, { color: '#2E7D32', fontWeight: paymentMethod === t('debit') ? '700' : '600' }]}>{t('debit')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.paymentOption,
-                  paymentMethod === t('credit') ? styles.paymentOptionSelected : null,
-                  { backgroundColor: '#FDECEA' }
-                ]}
-                onPress={() => selectPaymentMethod(t('credit'))}
-              >
-                <Text style={[styles.paymentOptionText, { color: '#C62828', fontWeight: paymentMethod === t('credit') ? '700' : '600' }]}>{t('credit')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.paymentOptionsRow}>
-              <TouchableOpacity
-                style={[styles.paymentOption, paymentMethod === t('pix') ? styles.paymentOptionSelected : null]}
-                onPress={() => selectPaymentMethod(t('pix'))}
-              >
-                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === t('pix') ? '700' : '600' }]}>{t('pix')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.paymentOption, paymentMethod === t('cash') ? styles.paymentOptionSelected : null]}
-                onPress={() => selectPaymentMethod(t('cash'))}
-              >
-                <Text style={[styles.paymentOptionText, { color: '#000', fontWeight: paymentMethod === t('cash') ? '700' : '600' }]}>{t('cash')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.paymentTabActions}>
-              <TouchableOpacity
-                style={styles.botaoSecundario}
-                onPress={() => {
-                  // cancelar seleção: limpa método e fecha modal
-                  setPaymentMethod(null)
-                  setPaymentMethodKey(null)
-                  setShowPaymentTab(false)
-                }}
-              >
-                <Text style={styles.botaoSecundarioTexto}>{t('cancel')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.fixedRegistrarMetodoBtn,
-                  { opacity: paymentMethod ? 1 : 0.6 }
-                ]}
-                onPress={confirmarMetodoPagamento}
-                disabled={!paymentMethod}
-              >
-                <Text style={styles.fixedRegistrarVendaBtnText}>{t('confirm')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   )
 }
 
+// ========================================================================
+// ESTILOS
+// ========================================================================
 const styles = StyleSheet.create({
+  // --- Seletor de Modo ---
+  viewModeSelector: {
+    flexDirection: "row",
+    width: "100%",
+    marginBottom: 16,
+    backgroundColor: "#eee",
+    borderRadius: 10,
+    padding: 4,
+  },
+  viewModeButton: {
+    flex: 1,
+    flexDirection: "row",
+    paddingVertical: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  viewModeButtonActive: {
+    backgroundColor: "#E67E22",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
+  viewModeText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#E67E22",
+    marginLeft: 8,
+  },
+  viewModeTextActive: {
+    color: "#fff",
+  },
+
+  // --- Estilos da Venda por Lista ---
+  listaContainer: {
+    width: "100%",
+    flex: 1,
+    minHeight: 320,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#434343",
+    fontSize: 16,
+  },
+  itemLista: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  itemImagem: {
+    width: 40,
+    height: 50,
+    borderRadius: 4,
+    marginRight: 12,
+    resizeMode: "cover",
+    backgroundColor: "#e0e0e0",
+  },
+  itemInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  itemNome: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  itemPreco: {
+    fontSize: 13,
+    color: "#000",
+    marginTop: 2,
+  },
+  listaVaziaText: {
+    textAlign: "center",
+    marginTop: 20,
+    color: "#777",
+    fontSize: 16,
+  },
+
+  // --- Estilos de Botões e Ações ---
   botaoAcao: {
     flex: 1,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 2,
-    elevation: 4,
+    marginHorizontal: 4,
+    elevation: 3,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
-
-  fixedRegistrarMetodoBtn: {
-    backgroundColor: "#FF9800",
-    borderWidth: 2,
-    borderColor: "#FF9800",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    marginRight: 6,
+  botaoCancelar: {
+    backgroundColor: "#f1f1f1",
+    borderColor: "#ddd",
+  },
+  botaoCancelarTexto: {
+    color: "#555",
+    fontWeight: "600",
+    fontSize: 14,
   },
   fixedRegistrarVendaBtn: {
     backgroundColor: "#FF9800",
@@ -676,6 +781,22 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+  botoesContainer: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 10,
+    flexShrink: 1,
+  },
+  botaoDisabled: {
+    backgroundColor: "#ccc",
+    borderColor: "#bbb",
+    opacity: 0.7,
+  },
+
+  // --- Estilos de Layout (Wrapper, Container, Card) ---
   wrapper: {
     flex: 1,
     backgroundColor: "#F8F8F8",
@@ -683,33 +804,31 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingBottom: 100, // Espaço para o BottomNav
-  },
   container: {
-    justifyContent: "center",
+    flex: 1,
+    justifyContent: "flex-start",
     padding: 16,
   },
   card: {
     backgroundColor: "#FFF",
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     alignItems: "center",
-    minHeight: 450,
+    flex: 1,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 6,
   },
+
+  // --- Estilos do Scanner ---
   fotoBox: {
-    width: "80%",
+    width: "100%",
     height: 320,
     borderRadius: 12,
-    overflow: "hidden", // importante para cortar a câmera no formato arredondado
-    marginVertical: 24,
+    overflow: "hidden",
+    marginVertical: 0,
   },
   botao: {
     backgroundColor: "#E67E22",
@@ -718,7 +837,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
@@ -729,65 +847,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
-  botaoDisabled: {
-    backgroundColor: "#ccc",
-    opacity: 0.5,
-  },
-  produtoInfo: {
-    alignItems: "center",
-    marginVertical: 10,
-    padding: 15,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    width: "80%",
-  },
-  produtoNome: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    textAlign: "center",
-  },
-  produtoPreco: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#E67E22",
-    marginTop: 5,
-  },
-  codigoBarras: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 5,
-  },
-  botoesContainer: {
-    flexDirection: "row",
-    gap: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "80%",
-  },
-  botaoSecundario: {
-    backgroundColor: "#fff",
-    borderWidth: 2,
-    borderColor: "#E67E22",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    marginRight: 6,
-  },
-  botaoSecundarioTexto: {
-    color: "#E67E22",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+
+  // --- Estilos de Status e Info ---
   statusInfo: {
     alignItems: "center",
+    justifyContent: "center",
     marginVertical: 15,
     padding: 15,
     backgroundColor: "#f8f9fa",
     borderRadius: 8,
-    width: "80%",
+    width: "100%",
+    minHeight: 100,
     borderLeftWidth: 4,
     borderLeftColor: "#E67E22",
   },
@@ -798,33 +868,78 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontWeight: "500",
   },
-  modalOverlay: {
+
+  // --- ESTILOS NOVOS: ConfirmarVendaView ---
+  confirmationContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
     width: '100%',
-    maxWidth: 480,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    elevation: 8,
+    padding: 4,
   },
-  paymentTabTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  produtoInfo: {
+    alignItems: "center",
+    marginBottom: 16,
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: '#eee'
+  },
+  produtoNome: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
     textAlign: "center",
+  },
+  produtoPreco: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#111",
+    marginTop: 5,
+  },
+  codigoBarras: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 5,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  inputGroup: {
+    flex: 1,
   },
   paymentOptionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
     width: '100%',
+    gap: 10,
   },
   paymentOption: {
     flex: 1,
@@ -834,53 +949,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#ddd",
-    marginHorizontal: 4,
   },
   paymentOptionSelected: {
     borderWidth: 2,
     borderColor: "#333",
     shadowColor: "#000",
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
+    elevation: 2,
   },
   paymentOptionText: {
     fontSize: 15,
+    fontWeight: '600'
   },
-  paymentTabActions: {
-    marginTop: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: '100%',
+  totalContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#E8F6EA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#b2dfdb',
+    alignItems: 'center',
   },
-  selectedPaymentRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#004d40',
   },
-  selectedPaymentLabel: {
-    fontSize: 13,
-    color: "#444",
-    fontWeight: "600",
+  totalValor: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#004d40',
+    marginTop: 4,
   },
-  paymentBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  paymentBadgeText: {
-    color: "#FFF",
-    fontWeight: "700",
-  },
-  paymentDebit: {
-    backgroundColor: "#2E7D32",
-  },
-  paymentCredit: {
-    backgroundColor: "#C62828",
-  },
-  paymentBlack: {
-    backgroundColor: "#000",
-  }
 })
