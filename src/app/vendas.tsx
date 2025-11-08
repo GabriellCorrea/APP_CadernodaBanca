@@ -2,34 +2,34 @@ import { BottomNav } from "@/components/barra_navegacao"
 import { Header } from "@/components/header"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { apiService } from "@/services/api"
+import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera"
 import { router } from "expo-router"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
   FlatList,
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
 
 // --- Tipos ---
 type ProdutoEstoque = {
   id_revista: any
   nome: string
-  preco_liquido: number
-  preco_capa?: number // Adicionado para consistência
-  imagem: any
+  url_revista: string
+  preco_capa: number // Adicionado para consistência
+  imagem: any  
   codigo_barras?: string
 }
 
@@ -63,6 +63,7 @@ function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProps) {
     const codigoLimpo = codigo.trim()
     if (codigoLimpo.includes("://") || codigoLimpo.includes("exp://")) return
     if (codigoLimpo.length < 8 || codigoLimpo.length > 18) return
+    console.log("🔍 Código escaneado:", codigoLimpo)
     if (!/^\d+$/.test(codigoLimpo)) return
 
     setLastScanTime(agora)
@@ -187,7 +188,13 @@ function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
     )
   }, [busca, produtos])
 
-  const renderItem = ({ item }: { item: ProdutoEstoque }) => (
+  const renderItem = ({ item }: { item: ProdutoEstoque }) => {
+    if(item.url_revista && typeof item.url_revista === 'string') {
+      const separator = item.url_revista.includes('?') ? '&' : '?';
+      const cacheBustedUrl = `${item.url_revista}${separator}timestamp=${new Date().getTime()}`;
+    item = {...item, imagem: { uri: cacheBustedUrl } };
+    }
+    return (
     <TouchableOpacity
       style={styles.itemLista}
       onPress={() => onProdutoSelecionado(item)} // CHAMA A FUNÇÃO PRINCIPAL
@@ -195,9 +202,7 @@ function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
       <Image
         source={
           item.imagem
-            ? typeof item.imagem === "string"
-              ? { uri: item.imagem }
-              : item.imagem
+            ? item.imagem
             : require("../../assets/images/imagem-placeholder.png")
         }
         style={styles.itemImagem}
@@ -205,12 +210,12 @@ function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
       <View style={styles.itemInfo}>
         <Text style={styles.itemNome}>{item.nome}</Text>
         <Text style={styles.itemPreco}>
-          R$ {(item.preco_liquido || 0).toFixed(2)}
+          R$ {(item.preco_capa).toFixed(2)}
         </Text>
       </View>
       <Ionicons name="add-circle" size={32} color="#E67E22" />
-    </TouchableOpacity>
-  )
+    </TouchableOpacity>)
+  }
 
   return (
     <View style={styles.listaContainer}>
@@ -271,7 +276,7 @@ function ConfirmarVendaView({
   // Cálculo do valor total
   const valorTotal = useMemo(() => {
     const preco = parseFloat(
-      (produto.preco_capa || produto.preco_liquido || 0).toString()
+      (produto.preco_capa || produto.preco_capa || 0).toString()
     )
     const qtd = parseInt(quantidade) || 0
     const desc = parseFloat(desconto.replace(",", ".")) || 0 // Aceita vírgula
@@ -355,7 +360,7 @@ function ConfirmarVendaView({
   }
 
   const precoUnitario = parseFloat(
-    (produto.preco_capa || produto.preco_liquido || 0).toString()
+    (produto.preco_capa || 0 ).toString()
   ).toFixed(2)
 
   return (

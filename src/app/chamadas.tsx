@@ -102,7 +102,7 @@ export default function Chamadas() {
     
     try {
       console.log('📤 Iniciando upload do arquivo...');
-      await apiService.chamadas.cadastrar(arquivoSelecionado);
+      await apiService.devolucoes.cadastrar(arquivoSelecionado);
       console.log('✅ Upload e processamento concluídos!');
       
       setIsProcessing(false);

@@ -4,22 +4,25 @@ import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker"; // Importado
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker"; // Importado
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator, // Importado
+  Alert, // Importado
+  Button,
+  KeyboardAvoidingView,
+  Modal, // Importado
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Modal, // Importado
-  Alert, // Importado
-  KeyboardAvoidingView, // Importado
-  Platform, // Importado
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function Estoque() {
   const { t } = useLanguage();
@@ -34,9 +37,29 @@ export default function Estoque() {
   const [novoCodigoBarras, setNovoCodigoBarras] = useState("");
   const [isUploadingFoto, setIsUploadingFoto] = useState(false);
   const [isSavingCodigo, setIsSavingCodigo] = useState(false);
+  const [scannerVisivel, setScannerVisivel] = useState(false);
+  const [permissao, requisitarPermissao] = useCameraPermissions();
   // --- Fim Novos Estados ---
 
   const filtros = ["Todos", "À mostra", "Em estoque"];
+
+  
+
+  const handleBarCodeScanned = ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
+    if (data && scannerVisivel) {
+      setScannerVisivel(false);
+      setNovoCodigoBarras(data);
+      Alert.alert("Código Escaneado", `Código: ${data}`);
+    }
+  };
+
+  
 
   useEffect(() => {
     carregarRevistas();
@@ -45,9 +68,21 @@ export default function Estoque() {
   async function carregarRevistas() {
     try {
       setLoading(true);
-      // 1. Alterado para o novo endpoint da api.ts
+      // 1. Alterado para o novo endpoint da api.ts 
       const revistas = await apiService.revistas.estoque();
-      setProdutos(revistas);
+      const revistasFormatadas = revistas.map(r => {
+        if (r.url_revista) {
+          console.log("URL da revista:", r.url_revista);
+        }
+        if (r.url_revista && typeof r.url_revista === 'string') {
+          const separator = r.url_revista.includes('?') ? '&' : '?';
+          const cacheBustedUrl = `${r.url_revista}${separator}timestamp=${new Date().getTime()}`;
+          return {...r, imagem: { uri: cacheBustedUrl } };
+        }
+        return r;
+      });
+      
+      setProdutos(revistasFormatadas);
     } catch (error) {
       console.error("❌ Erro ao buscar revistas:", error);
       Alert.alert(t("error"), "Não foi possível carregar o estoque.");
@@ -106,25 +141,49 @@ export default function Estoque() {
     if (isUploadingFoto) return;
 
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "image/*", // Apenas imagens
-        copyToCacheDirectory: true,
+      // 1. Pedir permissão para usar a câmera
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          t("permissionDenied"), // Adicionar esta chave ao seu i18n
+          t("cameraPermissionRequired") // Adicionar esta chave ao seu i18n
+        );
+        return;
+      }
+
+      // 2. Abrir a câmera
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true, // Permite ao usuário confirmar e cortar a foto
+        quality: 0.7, // Comprime um pouco a imagem
+        aspect: [1, 1], // Opcional: Força um corte quadrado
       });
 
       if (result.canceled) return;
 
-      const file = (result as any).assets?.[0] ?? result;
-      if (!file || !file.uri) return;
+      // 3. Pegar o asset da imagem
+      const imageAsset = result.assets?.[0];
+      if (!imageAsset || !imageAsset.uri) return;
+
+      // 4. Adaptar o objeto 'file' para a API
+      // A API espera um objeto com uri, name, e mimeType
+      const file = {
+        uri: imageAsset.uri,
+        name:
+          imageAsset.fileName ||
+          `foto_${Date.now()}.${imageAsset.uri.split(".").pop() || "jpg"}`,
+        mimeType: imageAsset.mimeType || "image/jpeg", // Usar mimeType se disponível
+        type: imageAsset.mimeType || "image/jpeg", // 'type' é necessário para FormData
+      };
+
 
       setIsUploadingFoto(true);
 
-      // Chama o novo endpoint da api.ts
-      // Assumindo que o produto tem 'id_revista' como no app antigo
+      // 5. Enviar o 'file' adaptado para a API
       await apiService.revistas.cadastrarFoto(produtoSelecionado.id_revista, file);
 
       Alert.alert(t("success"), "Foto adicionada com sucesso!");
 
-      // Atualiza o estado local para refletir a mudança
+      // 6. Atualizar estado local (mesma lógica de antes)
       const novaImagemUri = file.uri;
       setProdutoSelecionado((prev: any) => ({ ...prev, imagem: { uri: novaImagemUri } }));
       setProdutos((prevProdutos) =>
@@ -158,9 +217,9 @@ export default function Estoque() {
 
       // Chama o novo endpoint da api.ts
       const dados = {
-        nome: produtoSelecionado.nome,
-        numero_edicao: produtoSelecionado.numero_edicao, // API exige este campo
-        codigo_barras: novoCodigoBarras.trim(),
+        nome: String(produtoSelecionado.nome),
+        numero_edicao: Number(produtoSelecionado.numero_edicao), // API exige este campo
+        codigo_barras: String(novoCodigoBarras.trim()),
       };
 
       if (!dados.nome || !dados.numero_edicao) {
@@ -194,10 +253,45 @@ export default function Estoque() {
   };
   // --- Fim Novas Funções ---
 
+  if (!permissao) {
+    // Permissões ainda carregando
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#E67E22" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!permissao.granted) {
+    // Permissões não concedidas
+    return (
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { justifyContent: "center", alignItems: "center", padding: 20 },
+        ]}
+      >
+        <Header usuario="Andrea" pagina={t('stock')} />
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Text style={{ textAlign: "center", marginBottom: 20, fontSize: 16 }}>
+            Precisamos da sua permissão para usar a câmera e escanear códigos.
+          </Text>
+          <Button onPress={requisitarPermissao} title="Conceder Permissão" />
+        </View>
+        <View style={styles.bottomNavContainer}>
+          <BottomNav />
+        </View>
+      </SafeAreaView>
+    );
+  }
+  // --- Fim da Lógica de Permissão ---
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <Header usuario="Andrea" pagina={t('stock')} />
+      <Header usuario="Andrea" pagina={t("stock")} />
 
       {/* Conteúdo */}
       <View style={styles.container}>
@@ -211,7 +305,7 @@ export default function Estoque() {
           />
           <TextInput
             style={styles.input}
-            placeholder={t('searchMagazine')}
+            placeholder={t("searchMagazine")}
             placeholderTextColor="#666"
             value={busca}
             onChangeText={setBusca}
@@ -221,7 +315,7 @@ export default function Estoque() {
         {/* Título Filtros */}
         <View style={styles.filtrosTitulo}>
           <Feather name="filter" size={16} color="#1E2A38" />
-          <Text style={styles.filtrosTexto}>{t('filters')}</Text>
+          <Text style={styles.filtrosTexto}>{t("filters")}</Text>
         </View>
 
         {/* Botões de Filtro */}
@@ -234,7 +328,7 @@ export default function Estoque() {
             >
               <Text
                 style={[
-                  styles.filtroTexto,
+                  styles.filtrosTexto,
                   filtro === f && { color: "#34495E", fontWeight: "bold" },
                 ]}
               >
@@ -250,34 +344,31 @@ export default function Estoque() {
           showsVerticalScrollIndicator={false}
         >
           {loading && (
-            <View style={{ alignItems: "center", marginTop: 30 }}>
+            <View style={{ alignItems: "center", marginTop: 30, flex: 1, width: '100%' }}>
               <ActivityIndicator size="large" color="#E67E22" />
               <Text style={{ marginTop: 10, color: "#555" }}>
-                {t('loadingMagazines')}
+                {t("loadingMagazines")}
               </Text>
             </View>
           )}
 
           {!loading && produtosFiltrados.length === 0 && (
             <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
-              {t('noMagazineFound')}
+              {t("noMagazineFound")}
             </Text>
           )}
 
           {!loading &&
             produtosFiltrados.map((p) => (
-            <CardRevista
-              key={p.id_revista}
-              // A prop 'imagem' agora vem da nova API (pode ser null)
-              // O CardRevista atualizado lida com o placeholder
-              imagem={p.imagem}
-              titulo={p.nome || "Sem título"}
-              preco={p.preco_liquido || 0}
-              vendas={p.vendas || 0}
-              estoque={p.qtd_estoque || 0}
-              // Adiciona o onPress
-              onPress={() => handleCardPress(p)}
-            />
+              <CardRevista
+                key={p.id_revista}
+                imagem={p.imagem}
+                titulo={p.nome || "Sem título"}
+                preco={p.preco_capa || 0}
+                vendas={p.vendas || 0}
+                estoque={p.qtd_estoque || 0}
+                onPress={() => handleCardPress(p)}
+              />
             ))}
         </ScrollView>
       </View>
@@ -301,72 +392,146 @@ export default function Estoque() {
           <View style={modalStyles.modalContent}>
             {produtoSelecionado && (
               <>
-                <Text style={modalStyles.modalTitle}>{produtoSelecionado.nome}</Text>
-                <Text style={modalStyles.modalSubtitle}>Edição: {produtoSelecionado.numero_edicao || 'N/A'}</Text>
+                <Text style={modalStyles.modalTitle}>
+                  {produtoSelecionado.nome}
+                </Text>
+                <Text style={modalStyles.modalSubtitle}>
+                  Edição: {produtoSelecionado.numero_edicao || "N/A"}
+                </Text>
 
                 {/* Ação: Adicionar Foto */}
-                {/* Mostra o botão apenas se NÃO TIVER imagem */}
                 {!produtoSelecionado.imagem && (
                   <TouchableOpacity
                     style={modalStyles.actionButton}
                     onPress={handleAdicionarFoto}
                     disabled={isUploadingFoto}
                   >
-                    {isUploadingFoto
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={modalStyles.actionButtonText}>Adicionar Foto</Text>
-                    }
+                    {isUploadingFoto ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={modalStyles.actionButtonText}>
+                        Adicionar Foto
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 )}
-                {/* Informa se já tem foto */}
                 {produtoSelecionado.imagem && (
-                   <Text style={modalStyles.infoText}>✅ Produto já possui foto.</Text>
+                  <Text style={modalStyles.infoText}>
+                    ✅ Produto já possui foto.
+                  </Text>
                 )}
 
                 {/* Ação: Adicionar Cód. Barras */}
                 <Text style={modalStyles.inputLabel}>Código de Barras:</Text>
                 <TextInput
                   style={modalStyles.input}
-                  placeholder="Digite ou escaneie o código"
+                  placeholder="Digite o código"
                   value={novoCodigoBarras}
                   onChangeText={setNovoCodigoBarras}
                   keyboardType="numeric"
-                  editable={!isSavingCodigo} // Desativa input ao salvar
+                  editable={!isSavingCodigo}
                 />
+                <TouchableOpacity
+                  style={[
+                    modalStyles.actionButton,
+                    { backgroundColor: "#2980b9" },
+                  ]}
+                  onPress={() => setScannerVisivel(true)}
+                >
+                  <Text style={modalStyles.actionButtonText}>
+                    Escanear Código
+                  </Text>
+                </TouchableOpacity>
 
-                {/* Mostra o botão de salvar se o código for editável (ou novo) */}
-                {(!produtoSelecionado.codigo_barras || produtoSelecionado.codigo_barras !== novoCodigoBarras) && (
+                {/* Botão Salvar Código */}
+                {(!produtoSelecionado.codigo_barras ||
+                  produtoSelecionado.codigo_barras !== novoCodigoBarras) && (
                   <TouchableOpacity
-                    style={[modalStyles.actionButton, {backgroundColor: '#27ae60'} ]} // Botão verde para salvar
+                    style={[
+                      modalStyles.actionButton,
+                      { backgroundColor: "#27ae60" },
+                    ]}
                     onPress={handleAdicionarCodigo}
                     disabled={isSavingCodigo || !novoCodigoBarras}
                   >
-                    {isSavingCodigo
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={modalStyles.actionButtonText}>Salvar Código</Text>
-                    }
+                    {isSavingCodigo ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={modalStyles.actionButtonText}>
+                        Salvar Código
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 )}
-                {/* Informa se o código já está salvo e inalterado */}
-                {produtoSelecionado.codigo_barras && produtoSelecionado.codigo_barras === novoCodigoBarras && (
-                  <Text style={modalStyles.infoText}>✅ Código de barras já cadastrado.</Text>
-                )}
-
+                {produtoSelecionado.codigo_barras &&
+                  produtoSelecionado.codigo_barras === novoCodigoBarras && (
+                    <Text style={modalStyles.infoText}>
+                      ✅ Código de barras já cadastrado.
+                    </Text>
+                  )}
 
                 {/* Botão de Fechar */}
                 <TouchableOpacity
                   style={[modalStyles.actionButton, modalStyles.closeButton]}
                   onPress={handleCloseModal}
                 >
-                  <Text style={[modalStyles.actionButtonText, modalStyles.closeButtonText]}>Fechar</Text>
+                  <Text
+                    style={[
+                      modalStyles.actionButtonText,
+                      modalStyles.closeButtonText,
+                    ]}
+                  >
+                    Fechar
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
         </KeyboardAvoidingView>
       </Modal>
-      {/* --- Fim do Modal --- */}
+      {/* --- Fim do Modal de Edição --- */}
 
+      {/* --- 4. Modal do Scanner (Corrigido) --- */}
+      <Modal
+        visible={scannerVisivel}
+        onRequestClose={() => setScannerVisivel(false)}
+        animationType="slide"
+      >
+        <View style={{ flex: 1, backgroundColor: "black" }}>
+          <CameraView
+            style={StyleSheet.absoluteFillObject} // Preenche a tela
+            onBarcodeScanned={handleBarCodeScanned} // Prop para escanear
+            barcodeScannerSettings={{
+              // Otimização
+              barcodeTypes: [
+                "ean13",
+                "ean8",
+                "qr",
+                "upc_a",
+                "upc_e",
+                "code128",
+              ],
+            }}
+          />
+
+          {/* Overlay de "mira" (Ajuda visual) */}
+          <View style={scannerStyles.overlay}>
+            <View style={scannerStyles.scanBox} />
+            <Text style={scannerStyles.overlayText}>
+              Aponte para o código de barras
+            </Text>
+          </View>
+
+          {/* Botão de fechar sobreposto */}
+          <TouchableOpacity
+            style={scannerStyles.closeButton}
+            onPress={() => setScannerVisivel(false)}
+          >
+            <Ionicons name="close-circle" size={40} color="white" />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+      {/* --- Fim do Modal do Scanner --- */}
     </SafeAreaView>
   );
 }
@@ -424,9 +589,7 @@ const styles = StyleSheet.create({
   filtroAtivo: {
     backgroundColor: "rgba(230, 126, 34, 0.5)",
   },
-  filtroTexto: {
-    color: "#34495E",
-  },
+  // 'filtroTexto' (duplicado) removido, já existe acima
   produtos: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -441,21 +604,21 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- Novos Estilos para o Modal ---
+// Estilos para o Modal de Edição
 const modalStyles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: 'white',
+    width: "90%",
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -463,57 +626,94 @@ const modalStyles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
     marginBottom: 5,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 20,
   },
   inputLabel: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     marginTop: 15,
     marginBottom: 5,
-    width: '100%',
+    width: "100%",
   },
   input: {
-    width: '100%',
+    width: "100%",
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     marginBottom: 10,
   },
   actionButton: {
-    backgroundColor: '#E67E22',
+    backgroundColor: "#E67E22",
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
     marginTop: 10,
   },
   actionButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   closeButton: {
-    backgroundColor: '#7f8c8d',
+    backgroundColor: "#7f8c8d",
     marginTop: 15,
   },
   closeButtonText: {
-    color: 'white',
+    color: "white",
   },
   infoText: {
-    color: 'green',
+    color: "green",
     fontSize: 14,
     marginTop: 10,
-  }
+  },
+});
+
+// --- 5. Novos Estilos para o Modal do Scanner ---
+const scannerStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  scanBox: {
+    width: "70%",
+    height: 200, // Altura da "mira"
+    borderColor: "white",
+    borderWidth: 2,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  overlayText: {
+    color: "white",
+    fontSize: 16,
+    marginTop: 20,
+    fontWeight: "bold",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  closeButton: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 30, // Ajuste para safe area
+    right: 20,
+    zIndex: 10,
+    // Adiciona um fundo para melhor visibilidade
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 20,
+  },
 });

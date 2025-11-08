@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Image, Text, View, TouchableOpacity } from "react-native"; // Importado TouchableOpacity
+import { Image, Text, TouchableOpacity, View } from "react-native"; // Importado TouchableOpacity
 import { styles } from "./styles";
 
 type CardRevistaProps = {
@@ -33,7 +33,7 @@ export function CardRevista({
             source={
               // Lógica atualizada para usar o placeholder se 'imagem' for nula ou indefinida
               imagem
-                ? (typeof imagem === "string" ? { uri: imagem } : imagem) // Aceita string (URL antiga) ou objeto {uri} (nova API)
+                ? imagem
                 : require("../../../assets/images/imagem-placeholder.png") // Fallback
             }
             style={styles.imagem}
