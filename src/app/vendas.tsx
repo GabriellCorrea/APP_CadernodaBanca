@@ -1,6 +1,5 @@
 import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
-// Importa os novos componentes
 import { ConfirmarVendaView } from "@/components/vendas/ConfirmarVendaView";
 import { ScannerView } from "@/components/vendas/ScannerView";
 import { VendaPorLista } from "@/components/vendas/VendaPorLista";
@@ -22,7 +21,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// --- TIPO DEFINIDO E EXPORTADO AQUI ---
 export type ProdutoEstoque = {
   id_revista: any;
   nome: string;
@@ -31,7 +29,6 @@ export type ProdutoEstoque = {
   imagem: any;
   codigo_barras?: string;
 };
-// -------------------------------------
 
 export default function Vendas() {
   const { t } = useLanguage();
@@ -178,7 +175,7 @@ export default function Vendas() {
 }
 
 // ========================================================================
-// ESTILOS (Apenas os do componente PAI)
+// ESTILOS
 // ========================================================================
 const styles = StyleSheet.create({
   wrapper: {
@@ -209,7 +206,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
-  // --- Seletor de Modo ---
   viewModeSelector: {
     flexDirection: "row",
     width: "100%",
@@ -244,7 +240,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // --- Status da API ---
   apiStatusOffline: {
     backgroundColor: "#fff3cd",
     borderLeftColor: "#ffc107",
