@@ -1,15 +1,54 @@
 import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
-import { UltimasVendas } from "@/components/UltimasVendas/UltimasVendas";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
+import { UltimasVendas } from "@/components/UltimasVendas/UltimasVendas";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
 import { apiService } from "@/services/api";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react"; // NOVO: Importar useCallback
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type VendaRecenteApi = any;
+
+/**
+ * Helper para traduzir erros da API em mensagens amigáveis.
+ * (Idealmente, isso ficaria em um arquivo de utils, ex: 'utils/errorUtils.js')
+ *
+ * @param err O objeto de erro (geralmente do Axios)
+ * @param t A função de tradução (i18n)
+ * @returns Uma string com a mensagem de erro amigável
+ */
+const getFriendlyErrorMessage = (err: any, t: (key: string, fallback?: string) => string): string => {
+  if (err.code === 'ERR_NETWORK') {
+    return t("errorNetwork", "Erro de conexão. Verifique sua internet.");
+  }
+
+  if (err.response?.status) {
+    const status = err.response.status;
+    if (status >= 500) {
+      return t("errorServer", "Erro no servidor. Tente novamente mais tarde.");
+    }
+    if (status === 401 || status === 403) {
+      return t("errorAuth", "Você não tem permissão para ver isso.");
+    }
+    if (status === 404) {
+      return t("errorNotFound", "Não encontramos o que você procurava.");
+    }
+  }
+
+  // Fallback para a mensagem de erro que você já tinha ou uma genérica
+  return err.message || t("saleError", "Ocorreu um erro ao carregar os dados.");
+};
+
 
 export default function Home() {
   const router = useRouter();
@@ -18,49 +57,66 @@ export default function Home() {
   const [faturamento, setFaturamento] = useState<number>(0);
   const [ultimasVendas, setUltimasVendas] = useState<VendaRecenteApi[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Estado para o RefreshControl
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function carregarHomeData() {
-      try {
-        setLoading(true);
-        setError(null);
+ 
+  const carregarHomeData = useCallback(async (isRefresh = false) => {
+    
+    if (!isRefresh) {
+      setLoading(true);
+    }
+    setError(null); // Limpa erros anteriores a cada nova tentativa
 
-        // 1. Chama o novo endpoint unificado
-        // 'data' agora é a resposta direta, pois apiService.relatorios.home() já extrai res.data.data
-        const data = await apiService.relatorios.home();
+    try {
+      const data = await apiService.relatorios.home();
 
-        // 2. Acessa o objeto 'data' (que é a própria resposta)
-        if (data) {
-          // 3. Atualiza os estados com os dados recebidos
-          setFaturamento(data.faturamento_do_dia || 0);
+      if (data) {
+        setFaturamento(data.faturamento_do_dia || 0);
 
-          // Verifica se ultimas_vendas é um objeto (como no seu exemplo) ou array
-          if (Array.isArray(data.ultimas_vendas)) {
-            setUltimasVendas(data.ultimas_vendas);
-          } else if (typeof data.ultimas_vendas === 'object' && data.ultimas_vendas !== null) {
-            // Se for um objeto, converte para array
-            setUltimasVendas(Object.values(data.ultimas_vendas));
-          } else {
-            setUltimasVendas([]);
-          }
-
+        if (Array.isArray(data.ultimas_vendas)) {
+          setUltimasVendas(data.ultimas_vendas);
+        } else if (typeof data.ultimas_vendas === 'object' && data.ultimas_vendas !== null) {
+          setUltimasVendas(Object.values(data.ultimas_vendas));
         } else {
-          throw new Error("Formato de resposta inesperado da API.");
+          setUltimasVendas([]);
         }
 
-      } catch (err: any) {
-        console.error("Erro ao buscar dados da home:", err);
-        setError(err.message || t("saleError")); // Mostra a mensagem de erro real
-        setFaturamento(0);
-        setUltimasVendas([]);
-      } finally {
+      } else {
+        throw new Error("Formato de resposta inesperado da API.");
+      }
+
+    } catch (err: any) {
+      console.error("Erro ao buscar dados da home:", err);
+      // Usamos o helper para definir uma mensagem amigável
+      const friendlyMessage = getFriendlyErrorMessage(err, t);
+      setError(friendlyMessage);
+      setFaturamento(0);
+      setUltimasVendas([]);
+    } finally {
+      // Só paramos o loading principal se não for um refresh
+      if (!isRefresh) {
         setLoading(false);
       }
     }
+  }, [t]); // A dependência 't' garante que a função seja recriada se o idioma mudar
 
-    carregarHomeData();
-  }, [t]);
+  // useEffect agora chama a função memoizada (useCallback)
+  useEffect(() => {
+    carregarHomeData(false); // Chama como load inicial
+  }, [carregarHomeData]);
+
+  // Função para lidar com o "puxar para atualizar"
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await carregarHomeData(true); // Chama como refresh
+    setRefreshing(false);
+  }, [carregarHomeData]);
+
+  //Função para o botão "Tentar Novamente"
+  const handleRetry = () => {
+    carregarHomeData(false); // Chama como um load inicial
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,24 +125,49 @@ export default function Home() {
       <ScrollView
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollContentContainer}
+        //Adiciona o RefreshControl
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#FF9800"]} // Cor do spinner do refresh
+            tintColor={"#FF9800"}
+          />
+        }
       >
-        <MetaDoDia faturamentoDoDia={faturamento} />
-
-        <TouchableOpacity
-          style={styles.fixedRegistrarVendaBtn}
-          onPress={() => router.push("/vendas")}
-        >
-          <View style={styles.buttonContent}>
-            <Text style={styles.plusSymbol}>+</Text>
-            <Text style={styles.registrarVendaText}>{t("registerSale")}</Text>
+        {/* Lógica de renderização
+            Mostra um spinner grande se for o load inicial
+        */}
+        {loading ? (
+          <ActivityIndicator size="large" color="#FF9800" style={styles.loader} />
+        ) : error ? (
+          // Se der erro, mostra o container de erro com o botão
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>{"Tentar Novamente"}</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        ) : (
+          // Se tudo der certo, mostra o conteúdo
+          <>
+            <MetaDoDia faturamentoDoDia={faturamento} />
 
-        {error && !loading && (
-          <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.fixedRegistrarVendaBtn}
+              onPress={() => router.push("/vendas")}
+            >
+              <View style={styles.buttonContent}>
+                <Text style={styles.plusSymbol}>+</Text>
+                <Text style={styles.registrarVendaText}>{t("registerSale")}</Text>
+              </View>
+            </TouchableOpacity>
+
+            
+            <UltimasVendas vendasRaw={ultimasVendas} loading={loading || refreshing} />
+          </>
         )}
 
-        <UltimasVendas vendasRaw={ultimasVendas} loading={loading} />
       </ScrollView>
 
       <View style={styles.bottomNavContainer}>
@@ -107,6 +188,7 @@ const styles = StyleSheet.create({
   scrollContentContainer: {
     padding: 16,
     paddingBottom: 160,
+    flexGrow: 1, //Garante que o scroll ocupe espaço mesmo com pouco conteúdo
   },
   bottomNavContainer: {
     position: "absolute",
@@ -127,6 +209,8 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    marginTop: 20, // Adicionado um espaço
+    marginBottom: 20, // Adicionado um espaço
   },
   buttonContent: {
     flexDirection: "row",
@@ -144,10 +228,35 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginRight: 8,
   },
+  // Estilo de erro antigo
   errorText: {
-    color: 'red',
+    color: '#D32F2F', 
     textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 10,
+    fontSize: 16,
+    marginBottom: 20, 
+  },
+  // Estilos para o container de erro e botão
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  retryButton: {
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });
