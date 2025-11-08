@@ -70,9 +70,12 @@ export default function Home() {
 
     try {
       const data = await apiService.relatorios.home();
+      
+      
 
       if (data) {
         setFaturamento(data.faturamento_do_dia || 0);
+        console.log("Dados da home recebidos:", data);
 
         if (Array.isArray(data.ultimas_vendas)) {
           setUltimasVendas(data.ultimas_vendas);

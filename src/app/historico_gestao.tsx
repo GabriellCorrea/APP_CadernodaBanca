@@ -6,13 +6,13 @@ import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -42,7 +42,7 @@ export default function HistoricoGestao() {
       
       // Buscar chamadas do usuário logado
   // listarPorUsuario agora já faz retry em 5xx internamente
-  const chamadas = await apiService.chamadas.listarPorUsuario(user.id);
+  const chamadas = await apiService.devolucoes.listarPorUsuario();
 
   console.log('📦 Chamadas encontradas:', chamadas.length);
 
