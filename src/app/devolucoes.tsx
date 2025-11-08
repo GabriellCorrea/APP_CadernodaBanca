@@ -4,21 +4,20 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useEffect, useState, useCallback } from "react"; // Importar useCallback
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
-import React from "react";
 
 // Tipo para Devolução (do servidor)
 type Devolucao = {
@@ -234,7 +233,7 @@ export default function Devolucoes() {
         <View style={styles.tituloLinha}>
           <Ionicons name="alert-circle-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            {t("openReturns") || "Devoluções em Aberto"}
+            {"Devoluções em Aberto"}
           </Text>
         </View>
 

@@ -4,18 +4,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useEffect, useState, useCallback } from "react"; // Importar useCallback
+import { useCallback, useEffect, useState } from "react"; // Importar useCallback
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  FlatList,
-  Image
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -205,7 +205,7 @@ export default function Entradas() {
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina={t("entries") || "Entradas"} />
+      <Header usuario="Andrea" pagina={"Entradas"} />
 
       <ScrollView
         style={styles.container}
@@ -215,7 +215,7 @@ export default function Entradas() {
         {/* Seção de Upload (sem alteração) */}
         <View style={styles.tituloLinha}>
           <Ionicons name="add-circle-outline" size={22} color="#333" />
-          <Text style={styles.titulo}>{t("newEntry") || "Nova Entrada"}</Text>
+          <Text style={styles.titulo}>{"Nova Entrada"}</Text>
         </View>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -234,7 +234,7 @@ export default function Entradas() {
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            {t("lastRegisteredEntries") || "Últimas Entradas Registradas"}
+            {t("Ultimas Entradas")}
           </Text>
         </View>
 
