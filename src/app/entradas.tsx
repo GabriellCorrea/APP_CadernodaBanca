@@ -4,7 +4,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { useCallback, useEffect, useState } from "react"; // Importar useCallback
+import { useRouter } from "expo-router"; // Importar useRouter
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,7 +16,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -31,19 +32,15 @@ type Entrada = {
 type PendingUpload = {
   tempId: string; // ID temporário para o React
   fileName: string;
-  status: 'pending' | 'error';
+  status: "pending" | "error";
   file: any; // O arquivo em si
 };
 
 export default function Entradas() {
   const { t } = useLanguage();
+  const router = useRouter(); // Inicializar o router
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
-
-  // --- Estados removidos ---
-  // const [showSuccessModal, setShowSuccessModal] = useState(false);
-  // const [isProcessing, setIsProcessing] = useState(false);
-  // const [processingTime, setProcessingTime] = useState(0);
 
   // --- NOVO: Estado para uploads pendentes ---
   const [pendingEntradas, setPendingEntradas] = useState<PendingUpload[]>([]);
@@ -63,14 +60,15 @@ export default function Entradas() {
         id: entrega.id_documento_entrega || index + 1,
         titulo: entrega.nome_arquivo || `Entrada ${index + 1}`,
         data: entrega.data_entrega
-          ? new Date(entrega.data_entrega).toLocaleDateString('pt-BR')
-          : new Date().toLocaleDateString('pt-BR'),
-        imagem: "https://static.vecteezy.com/system/resources/previews/000/424/651/original/vector-invoice-icon.jpg",
+          ? new Date(entrega.data_entrega).toLocaleDateString("pt-BR")
+          : new Date().toLocaleDateString("pt-BR"),
+        imagem:
+          "https://static.vecteezy.com/system/resources/previews/000/424/651/original/vector-invoice-icon.jpg",
       }));
       setUltimasEntradas(entradasFormatadas.slice(0, 6));
     } catch (error) {
-      console.error('❌ Erro ao buscar entradas:', error);
-      setErrorList('Erro ao buscar entradas. Tente novamente.');
+      console.error("❌ Erro ao buscar entradas:", error);
+      setErrorList("Erro ao buscar entradas. Tente novamente.");
       setUltimasEntradas([]);
     } finally {
       setLoadingList(false);
@@ -88,25 +86,28 @@ export default function Entradas() {
       await apiService.entregas.cadastrar(upload.file);
 
       // 2. Sucesso: Remove da lista de pendentes
-      setPendingEntradas(prev => prev.filter(p => p.tempId !== upload.tempId));
+      setPendingEntradas((prev) =>
+        prev.filter((p) => p.tempId !== upload.tempId)
+      );
 
       // 3. Atualiza a lista principal
       await buscarEntradas();
-
     } catch (error: any) {
-      console.error('❌ Erro no upload da entrada:', error);
+      console.error("❌ Erro no upload da entrada:", error);
 
       // 4. Falha: Atualiza o status do item para 'error'
-      setPendingEntradas(prev =>
-        prev.map(p =>
-          p.tempId === upload.tempId ? { ...p, status: 'error' } : p
+      setPendingEntradas((prev) =>
+        prev.map((p) =>
+          p.tempId === upload.tempId ? { ...p, status: "error" } : p
         )
       );
 
       // 5. Alerta o usuário
       Alert.alert(
         "Erro no upload",
-        `Não foi possível enviar o arquivo "${upload.fileName}".\n\nDetalhes: ${error.message || 'Erro desconhecido'}`
+        `Não foi possível enviar o arquivo "${
+          upload.fileName
+        }".\n\nDetalhes: ${error.message || "Erro desconhecido"}`
       );
     }
   };
@@ -137,7 +138,7 @@ export default function Entradas() {
     const newPendingUpload: PendingUpload = {
       tempId,
       fileName: fileToUpload.name,
-      status: 'pending',
+      status: "pending",
       file: fileToUpload,
     };
 
@@ -146,7 +147,7 @@ export default function Entradas() {
     setArquivoSelecionado(null);
 
     // 2. Adiciona o item à lista de pendentes (UI atualiza)
-    setPendingEntradas(prev => [newPendingUpload, ...prev]);
+    setPendingEntradas((prev) => [newPendingUpload, ...prev]);
 
     // 3. Inicia o upload "em segundo plano" (não bloqueia a UI)
     _runUpload(newPendingUpload);
@@ -155,9 +156,9 @@ export default function Entradas() {
   // --- NOVO: Função para tentar novamente um upload falho ---
   const handleRetryUpload = (item: PendingUpload) => {
     // 1. Reseta o status para 'pending'
-    setPendingEntradas(prev =>
-      prev.map(p =>
-        p.tempId === item.tempId ? { ...p, status: 'pending' } : p
+    setPendingEntradas((prev) =>
+      prev.map((p) =>
+        p.tempId === item.tempId ? { ...p, status: "pending" } : p
       )
     );
     // 2. Tenta o upload novamente
@@ -169,38 +170,51 @@ export default function Entradas() {
     <View key={item.tempId} style={[styles.itemContainer, styles.pendingItem]}>
       <View style={styles.itemImage}>
         {/* Mostra o ícone de status */}
-        {item.status === 'pending' ? (
+        {item.status === "pending" ? (
           <ActivityIndicator size="small" color="#E67E22" />
         ) : (
           <Ionicons name="warning-outline" size={24} color="#E74C3C" />
         )}
       </View>
       <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle} numberOfLines={2}>{item.fileName}</Text>
-        {item.status === 'pending' ? (
+        <Text style={styles.itemTitle} numberOfLines={2}>
+          {item.fileName}
+        </Text>
+        {item.status === "pending" ? (
           <Text style={styles.itemDate}>Enviando...</Text>
         ) : (
-          <Text style={[styles.itemDate, { color: '#E74C3C' }]}>Falha no envio</Text>
+          <Text style={[styles.itemDate, { color: "#E74C3C" }]}>
+            Falha no envio
+          </Text>
         )}
       </View>
       {/* Botão de Tentar Novamente se falhar */}
-      {item.status === 'error' && (
-        <TouchableOpacity onPress={() => handleRetryUpload(item)} style={styles.retryButton}>
+      {item.status === "error" && (
+        <TouchableOpacity
+          onPress={() => handleRetryUpload(item)}
+          style={styles.retryButton}
+        >
           <Ionicons name="refresh" size={20} color="#3498DB" />
         </TouchableOpacity>
       )}
     </View>
   );
 
-  // --- Render Item da Lista (sem alteração) ---
+  // --- Render Item da Lista (ATUALIZADO PARA NAVEGAR) ---
   const renderItemLista = ({ item }: { item: Entrada }) => (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={() => router.push(`/entradas/${item.id}`)} // Navega para o detalhe
+    >
       <Image source={{ uri: item.imagem }} style={styles.itemImage} />
       <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle} numberOfLines={2}>{item.titulo}</Text>
+        <Text style={styles.itemTitle} numberOfLines={2}>
+          {item.titulo}
+        </Text>
         <Text style={styles.itemDate}>{item.data}</Text>
       </View>
-    </View>
+      <Ionicons name="chevron-forward" size={24} color="#777" />
+    </TouchableOpacity>
   );
 
   return (
@@ -224,7 +238,11 @@ export default function Entradas() {
         >
           <View style={styles.dropInner}>
             <View style={styles.dropIconBox}>
-              <Ionicons name="document-attach-outline" size={40} color="#34495E" />
+              <Ionicons
+                name="document-attach-outline"
+                size={40}
+                color="#34495E"
+              />
             </View>
             <Text style={styles.dropText}>{t("addFile")}</Text>
           </View>
@@ -247,7 +265,11 @@ export default function Entradas() {
 
         {/* Lista de entradas reais */}
         {loadingList ? (
-          <ActivityIndicator size="large" color="#E67E22" style={{marginTop: 20}} />
+          <ActivityIndicator
+            size="large"
+            color="#E67E22"
+            style={{ marginTop: 20 }}
+          />
         ) : errorList ? (
           <Text style={styles.errorText}>{errorList}</Text>
         ) : (
@@ -271,7 +293,11 @@ export default function Entradas() {
       <Modal transparent visible={showModal} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Ionicons name="document-attach-outline" size={40} color="#34495E" />
+            <Ionicons
+              name="document-attach-outline"
+              size={40}
+              color="#34495E"
+            />
             <Text style={styles.modalTitulo}>{t("confirmFile")}</Text>
             {arquivoSelecionado && (
               <Text style={styles.modalTexto}>{arquivoSelecionado.name}</Text>
@@ -300,7 +326,6 @@ export default function Entradas() {
     </SafeAreaView>
   );
 }
-
 
 // --- ESTILOS ATUALIZADOS ---
 const styles = StyleSheet.create({
@@ -367,15 +392,15 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
     marginBottom: 12,
-    flexDirection: 'row', // Adicionado para alinhar ícone e texto
-    alignItems: 'center', // Adicionado
+    flexDirection: "row", // Adicionado para alinhar ícone e texto
+    alignItems: "center", // Adicionado
   },
   // NOVO: Estilo para item pendente
   pendingItem: {
-    backgroundColor: '#FFF8E1', // Um amarelo claro
-    borderColor: '#FFD54F',
+    backgroundColor: "#FFF8E1", // Um amarelo claro
+    borderColor: "#FFD54F",
     borderWidth: 1,
-    width: '100%', // Ocupa a largura toda
+    width: "100%", // Ocupa a largura toda
   },
   itemImage: {
     width: 40, // Tamanho fixo para ícone ou imagem
@@ -383,10 +408,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 8,
     resizeMode: "cover",
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
     // NOVO: Alinhamento do ActivityIndicator
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   itemInfo: { flex: 1 },
   itemTitle: {
@@ -404,13 +429,13 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   emptyText: {
-    textAlign: 'center',
-    color: '#777',
+    textAlign: "center",
+    color: "#777",
     marginTop: 20,
   },
   errorText: {
-    textAlign: 'center',
-    color: 'red',
+    textAlign: "center",
+    color: "red",
     marginTop: 20,
   },
   // Modais

@@ -12,17 +12,11 @@ export default function RootLayout() {
         <Stack.Screen name="estoque" />
         <Stack.Screen name="relatorios" />
 
-        {/* --- ROTAS DE GESTÃO ATUALIZADAS --- */}
         <Stack.Screen name="gestao" />
         <Stack.Screen name="entradas" />
+        <Stack.Screen name="entradas/[id]" />
         <Stack.Screen name="devolucoes" />
         <Stack.Screen name="devolucoes/[id]" />
-
-        {/* As rotas abaixo foram substituídas:
-          <Stack.Screen name="devolucoes" />  (agora é 'devolucoes')
-          <Stack.Screen name="chamadas" />     (agora é 'entradas')
-          <Stack.Screen name="historico_gestao" /> (lógica movida para 'entradas' e 'devolucoes')
-        */}
       </Stack>
     </LanguageProvider>
   );

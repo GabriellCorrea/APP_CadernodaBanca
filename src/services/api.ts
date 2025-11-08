@@ -220,15 +220,20 @@ export const apiService = {
       return res.data
     },
     async listarPorUsuario() {
-      // TODO: Backend não parece ter este endpoint (baseado em entradas.py)
-      // Vou simular um retorno vazio por enquanto
-      console.warn("apiService.entregas.listarPorUsuario() não implementado no backend. (entradas.py)")
-      return Promise.resolve([])
-
-      // Se o endpoint /listar-entregas-usuario existir, use a linha abaixo:
-      // const res = await api.get('/entregas/listar-entregas-usuario')
-      // return toArray(res.data)
-    },
+      try {
+          return await retryWithBackoff(async () => {
+            const res = await api.get('/entregas/listar-entradas-usuario');
+            return toArray(res.data);
+          });
+        } catch (error) {
+          console.error('Erro ao buscar histórico de entregas:', error);
+          return [];
+        }
+      },
+    async consultar(id_entrega: number | string) {
+      const res = await api.get(`/entregas/${id_entrega}`);
+      return res.data; 
+  }
   },
 
   /**
