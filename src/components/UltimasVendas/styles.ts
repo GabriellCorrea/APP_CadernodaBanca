@@ -44,6 +44,11 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2C3E50',
   },
+  cardEdicao: {
+    fontSize: 10,
+    color: '#7F8C8D',
+    marginVertical: 2,
+  },
   cardPrice: {
     fontSize: 11,
     color: '#333',

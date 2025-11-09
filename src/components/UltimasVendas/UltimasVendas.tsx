@@ -11,6 +11,7 @@ type VendaRecente = {
   produto_imagem?: string;
   valor_total: number;
   data_venda: string;
+  numero_edicao: number;
 };
 
 // 1. Define as props que o componente espera
@@ -30,10 +31,11 @@ export function UltimasVendas({ vendasRaw, loading }: VendasProps) {
   useEffect(() => {
     if (vendasRaw && Array.isArray(vendasRaw)) {
       // Reutiliza a lógica de mapeamento original
-      // console.log("Mapeando vendasRaw:", vendasRaw);
+      console.log("Mapeando vendasRaw:", vendasRaw);
       const mapeadas = vendasRaw.map((venda: any) => ({
         id_venda: venda.id_venda || venda.id,
         produto_nome: venda.nome || "Produto desconhecido",
+        numero_edicao: venda.numero_edicao || "Sem edição",
         produto_imagem: venda.url_revista,
         valor_total: parseFloat(venda.valor_total || venda.valor || 0),
         data_venda: venda.data_venda || venda.created_at || "",
@@ -67,10 +69,8 @@ export function UltimasVendas({ vendasRaw, loading }: VendasProps) {
       />
       <View style={styles.cardTextContainer}>
         <Text style={styles.cardTitle}>{item.produto_nome}</Text>
+        <Text style={styles.cardEdicao}>Edição: {item.numero_edicao}</Text>
         <Text style={styles.cardPrice}>R$ {item.valor_total.toFixed(2)}</Text>
-        <Text style={styles.cardSales}>
-          {new Date(item.data_venda).toLocaleDateString("pt-BR")}
-        </Text>
       </View>
     </View>
   );
