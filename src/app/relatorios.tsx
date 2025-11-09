@@ -217,7 +217,7 @@ export default function Relatorios() {
               <BarChart
                 data={chartTop5Data}
                 width={width - 80}
-                height={300}
+                height={280}
                 barWidth={40}
                 spacing={25}
                 hideRules
@@ -246,8 +246,6 @@ export default function Relatorios() {
                    } else tooltipStyle.bottom = 0;
                    // @ts-ignore
                    if (ultimo == index) tooltipStyle.right = 0;
-                   // (FIM DA SUA LÓGICA)
-
 
                     return (
                         // @ts-ignore
@@ -257,7 +255,6 @@ export default function Relatorios() {
                                 <Text style={[styles.tooltipValue]}>
                                   Qtd. Vendida {item.value}
                                 </Text>
-
                             </View>
                         </View>
                     );
@@ -282,8 +279,8 @@ export default function Relatorios() {
               <PieChart
                 data={chartPagamentosData}
                 donut
-                innerRadius={90}
-                radius={120}
+                innerRadius={90}  
+                radius={160}
                 centerLabelComponent={() => (
                   <View style={styles.centerLabel}>
                     <Text style={styles.centerLabelText}>{t('total')}</Text>
@@ -435,7 +432,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   centerLabelText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#7F8C8D',
     fontWeight: '600',
   },
@@ -486,10 +483,10 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     fontStyle: 'italic',
   },
-tooltip: {
+  tooltip: {
     backgroundColor: '#1f2937',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -499,7 +496,8 @@ tooltip: {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     minWidth: 120,
-    maxWidth: width * 0.45, 
+    maxWidth: width * 0.5,
+    minHeight: 120 
   },
 
   tooltipContent: {
