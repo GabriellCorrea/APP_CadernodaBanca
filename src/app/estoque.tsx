@@ -371,6 +371,7 @@ export default function Estoque() {
                 key={p.id_revista}
                 imagem={p.imagem}
                 titulo={p.nome || "Sem título"}
+                numero_edicao={p.numero_edicao || "Sem edição"}
                 preco={p.preco_capa || 0}
                 vendas={p.vendas || 0}
                 estoque={p.qtd_estoque || 0}

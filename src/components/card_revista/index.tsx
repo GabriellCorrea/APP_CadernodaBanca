@@ -5,6 +5,7 @@ import { styles } from "./styles";
 type CardRevistaProps = {
   imagem: any; // Alterado de string para 'any' para aceitar {uri:...}, require() ou null
   titulo: string;
+  numero_edicao: number;
   preco: number;
   vendas: number;
   estoque: number;
@@ -16,6 +17,7 @@ export function CardRevista({
   titulo,
   preco,
   vendas,
+  numero_edicao,
   estoque,
   onPress, // Recebe a prop
 }: CardRevistaProps) {
@@ -42,9 +44,10 @@ export function CardRevista({
         <Text style={styles.titulo} numberOfLines={3}>
           {titulo}
         </Text>
+        <Text style={styles.edicao}>Edição: {numero_edicao}</Text>
 
         <Text style={styles.preco}>R$ {preco.toFixed(2)}</Text>
-        <Text style={styles.textoCinza}>{t('salesLabel')}: {vendas}</Text>
+        
         <Text style={styles.textoCinza}>{estoque} {t('units')}</Text>
       </View>
     </TouchableOpacity>
