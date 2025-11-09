@@ -61,7 +61,7 @@ export default function Relatorios() {
         apiService.relatorios.kpiProximaDevolucao().catch(() => ({ proxima_data_limite: null })),
         apiService.relatorios.kpiFaturamento30d().catch(() => ({ faturamento_ultimos_30_dias: 0 })),
         apiService.relatorios.kpiTicketMedio30d().catch(() => ({ ticket_medio_ultimos_30_dias: 0 })),
-        apiService.relatorios.graficoTop5RevistasHoje().catch(() => []),
+        apiService.relatorios.graficoTop5RevistasSemanal().catch(() => []),
         apiService.relatorios.graficoVendasPorPagamento30d().catch(() => [])
       ]);
 
@@ -212,11 +212,13 @@ export default function Relatorios() {
         {/* Gráfico 1 - Top 5 Revistas */}
         {chartTop5Data.length > 0 ? (
           <View style={styles.chartContainer}>
-            <Text style={styles.sectionTitle}>{t('top5MagazinesToday')}</Text>
+            <Text style={styles.sectionTitle}>{t('top5MagazinesWeekly')}</Text>
             <View style={styles.chartWrapper}>
               <BarChart
                 data={chartTop5Data}
                 width={width - 80}
+                noOfSections={2}
+                maxValue={Math.max(...chartTop5Data.map(d => d.value + 0.4))}
                 height={280}
                 barWidth={40}
                 spacing={25}
@@ -227,7 +229,6 @@ export default function Relatorios() {
                 yAxisColor="#D6DBDF"
                 yAxisTextStyle={styles.axisLabel}
                 xAxisLabelTextStyle={styles.barChartLabel}
-                noOfSections={4}
                 isAnimated
                 animationDuration={800}
 
@@ -264,7 +265,7 @@ export default function Relatorios() {
           </View>
         ) : (
           <View style={styles.chartContainer}>
-            <Text style={styles.sectionTitle}>{t('top5MagazinesToday')}</Text>
+            <Text style={styles.sectionTitle}>{t('top5MagazinesWeekly')}</Text>
             <Text style={styles.emptyText}>{t('noSalesToday')}</Text>
           </View>
         )}

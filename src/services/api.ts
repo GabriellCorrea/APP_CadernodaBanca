@@ -140,14 +140,14 @@ export const apiService = {
       return res.data?.data // Retorna o objeto {hoje, semana, ticket_medio, mais_vendidos}
     },
     async kpiFaturamentoHoje() {
-  try {
-    const res = await api.get('/relatorios/kpi/faturamento-hoje');
-    return res.data?.data || { faturamento_hoje: 0 };
-  } catch (error: any) {
-    console.error('❌ Erro ao buscar faturamento hoje:', error.message);
-    return { faturamento_hoje: 0 };
-  }
-},
+      try {
+        const res = await api.get('/relatorios/kpi/faturamento-hoje');
+        return res.data?.data || { faturamento_hoje: 0 };
+      } catch (error: any) {
+        console.error('❌ Erro ao buscar faturamento hoje:', error.message);
+        return { faturamento_hoje: 0 };
+      }
+    },
 
 /**
  * CARD 2: Unidades Vendidas Hoje
@@ -161,7 +161,6 @@ async kpiUnidadesHoje() {
     return { unidades_vendidas_hoje: 0 };
   }
 },
-
 /**
  * CARD 3: Devoluções Pendentes
  */
@@ -225,6 +224,31 @@ async kpiTicketMedio30d() {
 async graficoTop5RevistasHoje() {
   try {
     const res = await api.get('/relatorios/grafico/top5-revistas-hoje');
+    const data = res.data?.data;
+    
+    // Validar se é um array válido
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ Top 5 revistas não retornou array, usando array vazio');
+      return [];
+    }
+    
+    // Validar estrutura de cada item
+    return data.filter(item => 
+      item && 
+      typeof item.nome === 'string' && 
+      typeof item.total_vendido === 'number'
+    );
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar top 5 revistas:', error.message);
+    return [];
+  }
+},
+
+
+
+async graficoTop5RevistasSemanal() {
+  try {
+    const res = await api.get('/relatorios/grafico/top5-revistas-7d');
     const data = res.data?.data;
     
     // Validar se é um array válido

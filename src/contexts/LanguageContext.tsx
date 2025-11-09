@@ -199,7 +199,7 @@ const translations = {
     averageTicket30d: 'Ticket Médio (30 dias)',
     
     // Relatórios - Gráficos
-    top5MagazinesToday: 'Top 5 Revistas Vendidas (Hoje)',
+    top5MagazinesWeekly: 'Top 5 Revistas Vendidas (7 dias)',
     salesByPayment30d: 'Vendas por Método de Pagamento (30 dias)',
     total: 'Total',
     
@@ -395,7 +395,7 @@ const translations = {
     averageTicket30d: 'Scontrino Medio (30 giorni)',
     
     // Relatórios - Gráficos
-    top5MagazinesToday: 'Top 5 Riviste Vendute (Oggi)',
+    top5MagazinesWeekly: 'Top 5 Riviste Vendute (7 giorni)',
     salesByPayment30d: 'Vendite per Metodo di Pagamento (30 giorni)',
     total: 'Totale',
     
@@ -591,7 +591,7 @@ const translations = {
     averageTicket30d: 'Average Ticket (30 days)',
     
     // Relatórios - Gráficos
-    top5MagazinesToday: 'Top 5 Magazines Sold (Today)',
+    top5MagazinesWeekly: 'Top 5 Magazines Sold (7 days)',
     salesByPayment30d: 'Sales by Payment Method (30 days)',
     total: 'Total',
     
