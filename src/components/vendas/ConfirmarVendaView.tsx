@@ -98,8 +98,8 @@ export function ConfirmarVendaView({
       } else if (!error.response) {
         mensagemErro = "Sem conexão com a internet.";
         setApiOnline(false);
-      } else if (error.message) {
-        mensagemErro = `Erro: ${error.message}`
+      } else if (error.response.data["detail"]) {
+        mensagemErro = `Erro: ${error.response.data["detail"]}`
       }
 
       Alert.alert(t("error"), mensagemErro, [
