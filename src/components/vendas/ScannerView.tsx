@@ -1,45 +1,78 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
-import { ProdutoEstoque } from "../../app/vendas"; 
+import { ProdutoEstoque } from "../../app/vendas";
 
-type ScannerViewProps = {
-  onProdutoSelecionado: (produto: ProdutoEstoque) => void;
-  apiOnline: boolean;
+const getFriendlyErrorMessage = (
+  err: any,
+  t: (key: string, fallback?: string) => string
+): string => {
+  if (err.code === "ERR_NETWORK") {
+    return t("errorNetwork", "Erro de conexão. Verifique sua internet.");
+  }
+  if (err.response?.status >= 500) {
+    return t("errorServer", "Erro no servidor. Tente novamente mais tarde.");
+  }
+  return err.message || t("saleError", "Ocorreu um erro ao carregar os dados.");
 };
 
-export function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProps) {
+
+type ScannerViewProps = {
+ onScanSuccess: (produto: ProdutoEstoque) => void;
+ onScanFail: (barcode: string) => void;
+ apiOnline: boolean;
+};
+
+
+export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerViewProps) {
   const { t } = useLanguage();
   const [facing, setFacing] = useState<CameraType>("back");
   const [loading, setLoading] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
   const [lastScanTime, setLastScanTime] = useState<number>(0);
   const [permission, requestPermission] = useCameraPermissions();
 
+  const handleClearError = () => {
+    setError(null);
+    setScanned(false);
+    setLastScannedCode(null);
+    setLoading(false);
+  }
+
   const buscarProduto = async (codigo: string) => {
     const agora = Date.now();
-    if (agora - lastScanTime < 2000) return; // Throttle
-    if (scanned || loading || codigo === lastScannedCode) return;
-    if (!codigo || typeof codigo !== "string") return;
+    // Throttle: não processa mais de 1 scan a cada 2 segundos
+    if (agora - lastScanTime < 2000) return;
+    // Não processa se já estiver a carregar, se for o mesmo código, ou se houver um erro ativo
+    if (loading || codigo === lastScannedCode || error) return;
     const codigoLimpo = codigo.trim();
-    if (codigoLimpo.includes("://") || codigoLimpo.includes("exp://")) return;
-    if (codigoLimpo.length < 8 || codigoLimpo.length > 18) return;
-    console.log("🔍 Código escaneado:", codigoLimpo);
-    if (!/^\d+$/.test(codigoLimpo)) return;
+   if (
+      !codigoLimpo || 
+      codigoLimpo.length < 8 || 
+      codigoLimpo.length > 18 ||
+      !/^\d+$/.test(codigoLimpo) // Verifica se é 100% numérico
+    ) {
+      // console.log(`Código ignorado (não passou nos filtros): ${codigoLimpo}`);
+      return; 
+    }
+
+    // console.log("Código escaneado:", codigoLimpo);
 
     setLastScanTime(agora);
     setScanned(true);
     setLoading(true);
+    setError(null);
     setLastScannedCode(codigoLimpo);
 
     try {
@@ -49,34 +82,29 @@ export function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProp
       const produtoEncontrado = data["data"] || data;
 
       if (!produtoEncontrado || !produtoEncontrado.id_revista) {
-        console.error("Produto encontrado sem ID de revista", produtoEncontrado);
-        throw { response: { status: 404 }, message: t("productNotRegistered") };
+        throw { response: { status: 404 } };
       }
 
-      onProdutoSelecionado(produtoEncontrado);
-
+      onScanSuccess(produtoEncontrado);
+      
       setTimeout(() => setScanned(false), 1000);
     } catch (error: any) {
-      console.error("❌ Erro na busca de produto:", { error });
-      let mensagem = error.message || t("productNotFound");
-      if (error.response?.status === 404) mensagem = t("productNotRegistered");
+      const status = error.response?.status;
+      if (status === 404 || status === 500) {
+        // console.warn(`Código não encontrado (status: ${status}). Chamando onScanFail.`);
+        onScanFail(codigoLimpo);
+      } else {
+        // console.error("❌ Erro na busca de produto:", { error });
+        // const friendlyMessage = getFriendlyErrorMessage(error, t);
+        // setError(friendlyMessage);
+      }
 
-      Alert.alert(t("error"), mensagem, [
-        {
-          text: "Cancelar",
-          style: "cancel" as const,
-          onPress: () => {
-            setScanned(false);
-            setLastScannedCode(null);
-          },
-        },
-      ]);
+    } finally {
+      setLoading(false);
       setTimeout(() => {
         setScanned(false);
         setLastScannedCode(null);
-      }, 5000);
-    } finally {
-      setLoading(false);
+      }, 2000); 
     }
   };
 
@@ -84,7 +112,7 @@ export function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProp
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionContainer}>
+      <View style={styles.container}>
         <Text style={{ textAlign: "center", padding: 20 }}>
           {t("cameraPermissionNeeded")}
         </Text>
@@ -104,74 +132,103 @@ export function ScannerView({ onProdutoSelecionado, apiOnline }: ScannerViewProp
           barcodeTypes: ["code128", "ean13", "ean8", "qr"],
         }}
         onBarcodeScanned={(result) => {
-          if (result.data) buscarProduto(result.data);
+          if (result.data && !error) buscarProduto(result.data);
         }}
       />
-      {!loading && (
-        <View style={styles.statusInfo}>
-          <Text style={styles.statusTexto}>
-            {scanned ? t("waiting") : t("scanBarcode")}
-          </Text>
-        </View>
-      )}
       {loading && (
         <View style={styles.statusInfo}>
           <ActivityIndicator size="large" color="#E67E22" />
           <Text style={styles.statusTexto}>{t("searchingProduct")}</Text>
         </View>
       )}
+
+      {error &&  !loading && (
+        <View style={[styles.statusInfo, styles.errorBox]}>
+          <Text style={[styles.statusTexto, styles.errorText]}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.botao, styles.retryButtonScanner]}
+            onPress={handleClearError}
+          >
+            <Text style={styles.botaoTexto}>{t("tryAgain")}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!loading && !error && (
+        <View style={styles.statusInfo}>
+          <Text style={styles.statusTexto}>
+            {scanned ? t("waiting") : t("scanBarcode")}
+          </Text>
+        </View>
+      )}
     </>
   );
 }
 
+
 const styles = StyleSheet.create({
-  permissionContainer: {
+  container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "center",
     alignItems: "center",
-    minHeight: 300,
+  },
+  fotoBox: {
+    width: "100%",
+    aspectRatio: 1, 
+    borderRadius: 12,
+    overflow: "hidden",
+    marginVertical: 0,
+    backgroundColor: '#000', 
+  },
+  botao: {
+    backgroundColor: "#E67E22",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+  },
+  retryButtonScanner: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
   },
-  fotoBox: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    marginVertical: 0,
+  botaoTexto: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  statusInfo: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 15,
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    width: "100%",
+    minHeight: 100,
+    borderLeftWidth: 4,
+    borderLeftColor: "#E67E22",
+  },
+  statusTexto: {
+    fontSize: 14,
+    color: "#6c757d",
+    textAlign: "center",
+     marginTop: 8, // Corrigido (removido o 'image')
+    fontWeight: "500",
+  },
+  errorBox: {
+    borderLeftColor: "#D32F2F",
+    backgroundColor: "#FDECEA",
   },
-  botao: {
-    backgroundColor: "#E67E22",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-  },
-  botaoTexto: {
-    color: "#FFF",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  statusInfo: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 15,
-    padding: 15,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    width: "100%",
-    minHeight: 100,
-    borderLeftWidth: 4,
-    borderLeftColor: "#E67E22",
-  },
-  statusTexto: {
-    fontSize: 14,
-    color: "#6c757d",
-    textAlign: "center",
-    marginTop: 8,
-    fontWeight: "500",
+  errorText: {
+    color: '#D32F2F',
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 10,
   },
 });

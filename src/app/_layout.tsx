@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
+import { LogBox } from 'react-native';
 import { LanguageProvider } from '../contexts/LanguageContext';
 
+LogBox.ignoreAllLogs(); // Ignora todos os logs de aviso
 export default function RootLayout() {
   return (
     <LanguageProvider>

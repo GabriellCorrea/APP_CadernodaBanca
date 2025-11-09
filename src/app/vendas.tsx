@@ -2,22 +2,24 @@ import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { ConfirmarVendaView } from "@/components/vendas/ConfirmarVendaView";
 import { ScannerView } from "@/components/vendas/ScannerView";
+
 import { VendaPorLista } from "@/components/vendas/VendaPorLista";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Button,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -28,6 +30,7 @@ export type ProdutoEstoque = {
   preco_capa: number;
   imagem: any;
   codigo_barras?: string;
+  numero_edicao?: number;
 };
 
 export default function Vendas() {
@@ -37,30 +40,34 @@ export default function Vendas() {
   const [produtoSelecionado, setProdutoSelecionado] =
     useState<ProdutoEstoque | null>(null);
 
-  const [viewMode, setViewMode] = useState<"scanner" | "list">("scanner");
+  const [failedBarcode, setFailedBarcode] = useState<string | null>(null);
+  const [isListModalVisible, setIsListModalVisible] = useState(false);
+  const [ loading, setLoading ] = useState(false);
 
-  useEffect(() => {
-    const checkAuthAndApi = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) {
-          Alert.alert(
-            t("accessDenied"),
-            t("loginRequired"),
-            [{ text: t("ok"), onPress: () => router.push("/") }]
-          );
-          return;
-        }
-        await apiService.utils.ping();
-        setApiOnline(true);
-      } catch (error) {
-        setApiOnline(false);
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) router.push("/");
-      }
-    };
-    checkAuthAndApi();
-  }, [t]);
+ useFocusEffect(
+    useCallback(() => {
+      const checkAuthAndApi = async () => {
+        try {
+          const token = await AsyncStorage.getItem("access_token");
+          if (!token) {
+            Alert.alert(
+              t("accessDenied"),
+              t("loginRequired"),
+              [{ text: t("ok"), onPress: () => router.push("/") }]
+            );
+            return;
+          }
+          await apiService.utils.ping();
+          setApiOnline(true);
+        } catch (error) {
+          setApiOnline(false);
+          const token = await AsyncStorage.getItem("access_token");
+          if (!token) router.push("/");
+        }
+      };
+      checkAuthAndApi();
+    }, [t])
+  );
 
   const handleProdutoSelecionado = (produto: ProdutoEstoque) => {
     if (!produto || !produto.id_revista) {
@@ -70,6 +77,74 @@ export default function Vendas() {
     setProdutoSelecionado(produto);
   };
 
+  const handleScanFailed = (barcode: string) => {
+    // console.log("Scan falhou. Código:", barcode);
+    setFailedBarcode(barcode);
+    setIsListModalVisible(true);
+  };
+
+ const handleProductSelectedFromList = (product: ProdutoEstoque) => {
+    setIsListModalVisible(false); // Fecha o modal da lista
+
+    if (!failedBarcode) return; // Segurança
+
+    // Pergunta ao usuário se quer associar
+    Alert.alert(
+      "Associar Código de Barras?",
+      `Deseja guardar o código "${failedBarcode}" para a revista "${product.nome}"?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+          onPress: () => setFailedBarcode(null),
+        },
+        {
+          text: "Não, Apenas Vender",
+          onPress: () => {
+            // Vende o produto sem associar o código
+            setFailedBarcode(null);
+            handleProdutoSelecionado(product);
+          }
+        },
+        {
+          text: "Sim, Associar e Vender",
+          onPress: () => handleSaveCodeAndSell(product) // Chama a Função 4
+        },
+      ]
+    );
+  };
+
+  const handleSaveCodeAndSell = async (product: ProdutoEstoque) => {
+    if (loading || !failedBarcode || !product) return;
+
+    const numero_edicao = (product as any).numero_edicao || product.id_revista; // Fallback
+
+    const dados = {
+      nome: String(product.nome).trim(),
+      codigo_barras: String(failedBarcode).trim(),
+      numero_edicao: Number(numero_edicao),
+    };
+
+    if (!dados.nome || !dados.numero_edicao) {
+      Alert.alert(t("error"), "Dados do produto inválidos para associação.");
+      return;
+    }
+    try {
+      setLoading(true);
+      await apiService.revistas.cadastrarCodigo(dados);
+      Alert.alert(t("success"), t("barcodeAssociatedSuccessfully"));
+
+      const produtoAtualizado = { ...product, codigo_barras: failedBarcode };
+      handleProdutoSelecionado(produtoAtualizado);
+    } catch (error) {
+      // console.error("Erro ao associar código de barras:", error);
+      Alert.alert(t("error"), t("failedToAssociateBarcode"));
+    } finally {
+      setLoading(false);
+      setFailedBarcode(null);
+    }
+  };
+
   const handleCancelarVenda = () => {
     setProdutoSelecionado(null);
   };
@@ -77,7 +152,15 @@ export default function Vendas() {
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       <Header usuario="Andrea" pagina={t("salesPage")} />
-
+      
+      {/* Loading global para salvar o código */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#FFF" />
+          <Text style={styles.loadingText}>Salvando código...</Text>
+        </View>
+      )}
+      
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.scrollContainer}
@@ -93,87 +176,60 @@ export default function Vendas() {
                   </Text>
                 </View>
               )}
+              
 
               {!produtoSelecionado ? (
-                // --- TELA 1: SELEÇÃO DE PRODUTO ---
-                <>
-                  <View style={styles.viewModeSelector}>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        viewMode === "scanner" && styles.viewModeButtonActive,
-                      ]}
-                      onPress={() => setViewMode("scanner")}
-                    >
-                      <Ionicons
-                        name="camera-outline"
-                        size={20}
-                        color={viewMode === "scanner" ? "#fff" : "#E67E22"}
-                      />
-                      <Text
-                        style={[
-                          styles.viewModeText,
-                          viewMode === "scanner" && styles.viewModeTextActive,
-                        ]}
-                      >
-                        Scanner
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        viewMode === "list" && styles.viewModeButtonActive,
-                      ]}
-                      onPress={() => setViewMode("list")}
-                    >
-                      <Ionicons
-                        name="list-outline"
-                        size={20}
-                        color={viewMode === "list" ? "#fff" : "#E67E22"}
-                      />
-                      <Text
-                        style={[
-                          styles.viewModeText,
-                          viewMode === "list" && styles.viewModeTextActive,
-                        ]}
-                      >
-                        Lista
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                //  TELA 1 : SCANNER
 
-                  {viewMode === "scanner" && (
-                    <ScannerView
-                      onProdutoSelecionado={handleProdutoSelecionado}
-                      apiOnline={apiOnline}
-                    />
-                  )}
-
-                  {viewMode === "list" && (
-                    <VendaPorLista
-                      onProdutoSelecionado={handleProdutoSelecionado}
-                    />
-                  )}
-                </>
-              ) : (
-                // --- TELA 2: CONFIRMAÇÃO DE VENDA ---
-                <ConfirmarVendaView
-                  produto={produtoSelecionado}
-                  onCancelar={handleCancelarVenda}
-                  apiOnline={apiOnline}
-                  setApiOnline={setApiOnline}
-                />
-              )}
+                <ScannerView
+                  onScanSuccess={handleProdutoSelecionado}
+                  onScanFail={handleScanFailed}
+                  apiOnline={apiOnline}
+                />
+                ) : (
+                  // TELA 2: CONFIRMAÇÃO DE VENDA
+                  <ConfirmarVendaView
+                    produto={produtoSelecionado}
+                    onCancelar={handleCancelarVenda}
+                    apiOnline={apiOnline}
+                    setApiOnline={setApiOnline}
+                  />
+                )}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
 
+        <Modal
+          visible={isListModalVisible}
+          animationType="slide"
+          onRequestClose={() => setIsListModalVisible(false)}
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Produto não encontrado</Text>
+            <Text style={styles.modalSubtitle}>
+              Selecione o produto na lista abaixo:
+            </Text>
+
+            <VendaPorLista
+              onProdutoSelecionado={handleProductSelectedFromList}
+            />  
+
+            <Button
+              title="Fechar"
+              onPress={() => {
+                setIsListModalVisible(false);
+                setFailedBarcode(null);
+              }}
+              color = "#E67E22"
+            />
+          </SafeAreaView>
+        </Modal>
       <BottomNav />
     </SafeAreaView>
   );
 }
-
+  
 // ========================================================================
 // ESTILOS
 // ========================================================================
@@ -206,40 +262,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
-  viewModeSelector: {
-    flexDirection: "row",
-    width: "100%",
-    marginBottom: 16,
-    backgroundColor: "#eee",
-    borderRadius: 10,
-    padding: 4,
-  },
-  viewModeButton: {
-    flex: 1,
-    flexDirection: "row",
-    paddingVertical: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  viewModeButtonActive: {
-    backgroundColor: "#E67E22",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-  },
-  viewModeText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#E67E22",
-    marginLeft: 8,
-  },
-  viewModeTextActive: {
-    color: "#fff",
-  },
-
   apiStatusOffline: {
     backgroundColor: "#fff3cd",
     borderLeftColor: "#ffc107",
@@ -254,4 +276,35 @@ const styles = StyleSheet.create({
     color: "#856404",
     marginTop: 0,
   },
-});
+  modalContainer: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#F8F8F8",
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 8,
+    color: "#333",
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#555",
+    marginBottom: 16,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: "#FFF",
+    marginTop: 10,
+    fontSize: 16,
+  },
+}); 
+
