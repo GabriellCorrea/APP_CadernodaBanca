@@ -42,30 +42,30 @@ export default function Vendas() {
 
   const [failedBarcode, setFailedBarcode] = useState<string | null>(null);
   const [isListModalVisible, setIsListModalVisible] = useState(false);
-  const [ loading, setLoading ] = useState(false);
+  const [loading, setLoading] = useState(false);
 
- useFocusEffect(
+  useFocusEffect(
     useCallback(() => {
       const checkAuthAndApi = async () => {
-        try {
-          const token = await AsyncStorage.getItem("access_token");
-          if (!token) {
-            Alert.alert(
-              t("accessDenied"),
-              t("loginRequired"),
-              [{ text: t("ok"), onPress: () => router.push("/") }]
-            );
-            return;
-          }
-          await apiService.utils.ping();
-          setApiOnline(true);
-        } catch (error) {
-          setApiOnline(false);
-          const token = await AsyncStorage.getItem("access_token");
-          if (!token) router.push("/");
-        }
-      };
-      checkAuthAndApi();
+        try {
+          const token = await AsyncStorage.getItem("access_token");
+          if (!token) {
+            Alert.alert(
+              t("accessDenied"),
+              t("loginRequired"),
+              [{ text: t("ok"), onPress: () => router.push("/") }]
+            );
+            return;
+          }
+          await apiService.utils.ping();
+          setApiOnline(true);
+        } catch (error) {
+          setApiOnline(false);
+          const token = await AsyncStorage.getItem("access_token");
+          if (!token) router.push("/");
+        }
+      };
+      checkAuthAndApi();
     }, [t])
   );
 
@@ -83,7 +83,7 @@ export default function Vendas() {
     setIsListModalVisible(true);
   };
 
- const handleProductSelectedFromList = (product: ProdutoEstoque) => {
+  const handleProductSelectedFromList = (product: ProdutoEstoque) => {
     setIsListModalVisible(false); // Fecha o modal da lista
 
     if (!failedBarcode) return; // Segurança
@@ -152,15 +152,15 @@ export default function Vendas() {
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       <Header usuario="Andrea" pagina={t("salesPage")} />
-      
+
       {/* Loading global para salvar o código */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#FFF" />
-          <Text style={styles.loadingText}>Salvando código...</Text>
+          <Text style={styles.loadingText}>{t('savingCode')}</Text>
         </View>
       )}
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.scrollContainer}
@@ -176,7 +176,7 @@ export default function Vendas() {
                   </Text>
                 </View>
               )}
-              
+
 
               {!produtoSelecionado ? (
                 //  TELA 1 : SCANNER
@@ -184,52 +184,52 @@ export default function Vendas() {
                 <ScannerView
                   onScanSuccess={handleProdutoSelecionado}
                   onScanFail={handleScanFailed}
-                  apiOnline={apiOnline}
-                />
-                ) : (
-                  // TELA 2: CONFIRMAÇÃO DE VENDA
-                  <ConfirmarVendaView
-                    produto={produtoSelecionado}
-                    onCancelar={handleCancelarVenda}
-                    apiOnline={apiOnline}
-                    setApiOnline={setApiOnline}
-                  />
-                )}
-              </View>
+                  apiOnline={apiOnline}
+                />
+              ) : (
+                // TELA 2: CONFIRMAÇÃO DE VENDA
+                <ConfirmarVendaView
+                  produto={produtoSelecionado}
+                  onCancelar={handleCancelarVenda}
+                  apiOnline={apiOnline}
+                  setApiOnline={setApiOnline}
+                />
+              )}
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-        <Modal
-          visible={isListModalVisible}
-          animationType="slide"
-          onRequestClose={() => setIsListModalVisible(false)}
-        >
-          <SafeAreaView style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Produto não encontrado</Text>
-            <Text style={styles.modalSubtitle}>
-              Selecione o produto na lista abaixo:
-            </Text>
+      <Modal
+        visible={isListModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsListModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>{t('productNotFound')}</Text>
+          <Text style={styles.modalSubtitle}>
+            {t('selectProduct')}:
+          </Text>
 
-            <VendaPorLista
-              onProdutoSelecionado={handleProductSelectedFromList}
-            />  
+          <VendaPorLista
+            onProdutoSelecionado={handleProductSelectedFromList}
+          />
 
-            <Button
-              title="Fechar"
-              onPress={() => {
-                setIsListModalVisible(false);
-                setFailedBarcode(null);
-              }}
-              color = "#E67E22"
-            />
-          </SafeAreaView>
-        </Modal>
+          <Button
+            title={t('closeModal')}
+            onPress={() => {
+              setIsListModalVisible(false);
+              setFailedBarcode(null);
+            }}
+            color="#E67E22"
+          />
+        </SafeAreaView>
+      </Modal>
       <BottomNav />
     </SafeAreaView>
   );
 }
-  
+
 // ========================================================================
 // ESTILOS
 // ========================================================================
@@ -306,5 +306,5 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-}); 
+});
 

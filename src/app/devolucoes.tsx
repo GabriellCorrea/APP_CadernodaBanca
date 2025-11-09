@@ -193,9 +193,9 @@ export default function Devolucoes() {
     >
       <Ionicons name="document-text-outline" size={32} color="#E67E22" style={{marginRight: 12}} />
       <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle}>Devolução #{item.id_chamada_devolucao}</Text>
+        <Text style={styles.itemTitle}>{t('return')} #{item.id_chamada_devolucao}</Text>
         <Text style={styles.itemDate}>
-          Data Limite: {new Date(item.data_limite).toLocaleDateString('pt-BR')}
+          {t('limitDate')}: {new Date(item.data_limite).toLocaleDateString('pt-BR')}
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={24} color="#777" />
@@ -204,7 +204,7 @@ export default function Devolucoes() {
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina={t("returns") || "Devoluções"} />
+      <Header usuario="Andrea" pagina={t("return") || "Devoluções"} />
 
       <ScrollView
         style={styles.container}
@@ -233,7 +233,7 @@ export default function Devolucoes() {
         <View style={styles.tituloLinha}>
           <Ionicons name="alert-circle-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            {"Devoluções em Aberto"}
+            {t("openReturns")}
           </Text>
         </View>
 
@@ -257,7 +257,7 @@ export default function Devolucoes() {
             scrollEnabled={false}
             ListEmptyComponent={
               pendingDevolucoes.length === 0 ? ( // Só mostra se pendentes tbm for 0
-                <Text style={styles.emptyText}>Nenhuma devolução em aberto</Text>
+                <Text style={styles.emptyText}>{t('noReturnsOpen')}</Text>
               ) : null
             }
           />

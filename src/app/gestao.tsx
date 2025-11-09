@@ -22,7 +22,7 @@ export default function Gestao() {
           activeOpacity={0.85}
         >
           <Icon name="package-down" size={50} color="#fff" style={styles.icon} />
-          <Text style={styles.buttonText}>{'Entrada'}</Text>
+          <Text style={styles.buttonText}>{t("delivery")}</Text>
         </TouchableOpacity>
 
         {/* Acompanhar Devoluções */}
@@ -32,7 +32,7 @@ export default function Gestao() {
           activeOpacity={0.85}
         >
           <Icon name="package-up" size={50} color="#fff" style={styles.icon} />
-          <Text style={styles.buttonText}>{'Devoluções'}</Text>
+          <Text style={styles.buttonText}>{t("return")}</Text>
         </TouchableOpacity>
       </View>
 

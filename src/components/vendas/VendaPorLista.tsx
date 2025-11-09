@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -70,6 +71,7 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
         />
         <View style={styles.itemInfo}>
           <Text style={styles.itemNome}>{item.nome}</Text>
+          <Text style={styles.itemPreco}>{t('edition')}: {item.numero_edicao}</Text>
           <Text style={styles.itemPreco}>
             R$ {(item.preco_capa).toFixed(2)}
           </Text>
@@ -80,7 +82,7 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
   };
 
   return (
-    <View style={styles.listaContainer}>
+    <ScrollView style={styles.listaContainer}>
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
@@ -106,7 +108,7 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
           )}
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 

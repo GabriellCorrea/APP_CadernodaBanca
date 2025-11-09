@@ -43,7 +43,7 @@ export default function Estoque() {
 
   const filtros = ["Todos", "À mostra", "Em estoque"];
 
-  
+
 
   const handleBarCodeScanned = ({
     type,
@@ -59,7 +59,7 @@ export default function Estoque() {
     }
   };
 
-  
+
 
   useEffect(() => {
     carregarRevistas();
@@ -77,11 +77,11 @@ export default function Estoque() {
         if (r.url_revista && typeof r.url_revista === 'string') {
           const separator = r.url_revista.includes('?') ? '&' : '?';
           const cacheBustedUrl = `${r.url_revista}${separator}timestamp=${new Date().getTime()}`;
-          return {...r, imagem: { uri: cacheBustedUrl } };
+          return { ...r, imagem: { uri: cacheBustedUrl } };
         }
         return r;
       });
-      
+
       setProdutos(revistasFormatadas);
     } catch (error) {
       console.error("❌ Erro ao buscar revistas:", error);
@@ -274,7 +274,7 @@ export default function Estoque() {
         ]}
       >
         <Header usuario="Andrea" pagina={t('stock')} />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ textAlign: "center", marginBottom: 20, fontSize: 16 }}>
             Precisamos da sua permissão para usar a câmera e escanear códigos.
           </Text>
@@ -319,7 +319,13 @@ export default function Estoque() {
         </View>
 
         {/* Botões de Filtro */}
-        <View style={styles.filtros}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToAlignment="start"
+          style={styles.filtros}
+        >
           {filtros.map((f) => (
             <TouchableOpacity
               key={f}
@@ -336,10 +342,11 @@ export default function Estoque() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Lista de produtos */}
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={styles.produtos}
           showsVerticalScrollIndicator={false}
         >
@@ -382,6 +389,8 @@ export default function Estoque() {
       <Modal
         visible={isModalVisible}
         animationType="slide"
+        presentationStyle="overFullScreen"
+        statusBarTranslucent={true}
         transparent={true}
         onRequestClose={handleCloseModal}
       >
@@ -396,7 +405,7 @@ export default function Estoque() {
                   {produtoSelecionado.nome}
                 </Text>
                 <Text style={modalStyles.modalSubtitle}>
-                  Edição: {produtoSelecionado.numero_edicao || "N/A"}
+                  {t('edition')}: {produtoSelecionado.numero_edicao || "N/A"}
                 </Text>
 
                 {/* Ação: Adicionar Foto */}
@@ -410,22 +419,22 @@ export default function Estoque() {
                       <ActivityIndicator color="#fff" />
                     ) : (
                       <Text style={modalStyles.actionButtonText}>
-                        Adicionar Foto
+                        {t('addPhoto')}
                       </Text>
                     )}
                   </TouchableOpacity>
                 )}
                 {produtoSelecionado.imagem && (
                   <Text style={modalStyles.infoText}>
-                    ✅ Produto já possui foto.
+                    {t('photoExists')}
                   </Text>
                 )}
 
                 {/* Ação: Adicionar Cód. Barras */}
-                <Text style={modalStyles.inputLabel}>Código de Barras:</Text>
+                <Text style={modalStyles.inputLabel}>{t('barCode')}:</Text>
                 <TextInput
                   style={modalStyles.input}
-                  placeholder="Digite o código"
+                  placeholder={t("typeCode")}
                   value={novoCodigoBarras}
                   onChangeText={setNovoCodigoBarras}
                   keyboardType="numeric"
@@ -439,34 +448,34 @@ export default function Estoque() {
                   onPress={() => setScannerVisivel(true)}
                 >
                   <Text style={modalStyles.actionButtonText}>
-                    Escanear Código
+                    {t('scanCode')}
                   </Text>
                 </TouchableOpacity>
 
                 {/* Botão Salvar Código */}
                 {(!produtoSelecionado.codigo_barras ||
                   produtoSelecionado.codigo_barras !== novoCodigoBarras) && (
-                  <TouchableOpacity
-                    style={[
-                      modalStyles.actionButton,
-                      { backgroundColor: "#27ae60" },
-                    ]}
-                    onPress={handleAdicionarCodigo}
-                    disabled={isSavingCodigo || !novoCodigoBarras}
-                  >
-                    {isSavingCodigo ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={modalStyles.actionButtonText}>
-                        Salvar Código
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                )}
+                    <TouchableOpacity
+                      style={[
+                        modalStyles.actionButton,
+                        { backgroundColor: "#27ae60" },
+                      ]}
+                      onPress={handleAdicionarCodigo}
+                      disabled={isSavingCodigo || !novoCodigoBarras}
+                    >
+                      {isSavingCodigo ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={modalStyles.actionButtonText}>
+                          {t('saveCode')}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 {produtoSelecionado.codigo_barras &&
                   produtoSelecionado.codigo_barras === novoCodigoBarras && (
                     <Text style={modalStyles.infoText}>
-                      ✅ Código de barras já cadastrado.
+                      {t('barCodeExists')}
                     </Text>
                   )}
 
@@ -481,7 +490,7 @@ export default function Estoque() {
                       modalStyles.closeButtonText,
                     ]}
                   >
-                    Fechar
+                    {t('closeModal')}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -518,7 +527,7 @@ export default function Estoque() {
           <View style={scannerStyles.overlay}>
             <View style={scannerStyles.scanBox} />
             <Text style={scannerStyles.overlayText}>
-              Aponte para o código de barras
+              {t('targetCode')}
             </Text>
           </View>
 
@@ -576,7 +585,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   filtros: {
-    flexDirection: "row",
+    maxHeight: 50,
     marginBottom: 20,
   },
   filtroButton: {
@@ -585,6 +594,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#ddd",
     marginRight: 8,
+    height: 35,
+    justifyContent: 'center'
   },
   filtroAtivo: {
     backgroundColor: "rgba(230, 126, 34, 0.5)",

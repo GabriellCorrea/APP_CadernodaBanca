@@ -32,7 +32,7 @@ const languages: Language[] = [
 
 export function LanguageSelector() {
   const [modalVisible, setModalVisible] = useState(false);
-  const { currentLanguage, changeLanguage } = useLanguage();
+  const { t, currentLanguage, changeLanguage } = useLanguage();
 
   const selectedLanguage = languages.find(lang => lang.code === currentLanguage) || languages[0];
 
@@ -44,7 +44,7 @@ export function LanguageSelector() {
   return (
     <View>
       {/* Botão principal */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.selectorButton}
         onPress={() => setModalVisible(true)}
       >
@@ -62,18 +62,20 @@ export function LanguageSelector() {
       {/* Modal de seleção */}
       <Modal
         animationType="fade"
+        presentationStyle="overFullScreen"   // iOS: garante que o modal fique por cima da tela inteira
+        statusBarTranslucent={true}         // Android: permite cobrir a status bar
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecionar Idioma</Text>
-            
+            <Text style={styles.modalTitle}>{t('selectLang')}</Text>
+
             {languages.map((language) => (
               <TouchableOpacity
                 key={language.code}

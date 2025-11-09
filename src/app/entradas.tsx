@@ -25,7 +25,6 @@ type Entrada = {
   id: string;
   titulo: string;
   data: string;
-  imagem: string;
 };
 
 // --- NOVO: Tipo para uploads pendentes ---
@@ -105,8 +104,7 @@ export default function Entradas() {
       // 5. Alerta o usuário
       Alert.alert(
         "Erro no upload",
-        `Não foi possível enviar o arquivo "${
-          upload.fileName
+        `Não foi possível enviar o arquivo "${upload.fileName
         }".\n\nDetalhes: ${error.message || "Erro desconhecido"}`
       );
     }
@@ -202,16 +200,29 @@ export default function Entradas() {
 
   // --- Render Item da Lista (ATUALIZADO PARA NAVEGAR) ---
   const renderItemLista = ({ item }: { item: Entrada }) => (
+    // <TouchableOpacity
+    //   style={styles.itemContainer}
+    //   onPress={() => router.push(`/entradas/${item.id}`)} // Navega para o detalhe
+    // >
+    //   <Image source={{ uri: item.imagem }} style={styles.itemImage} />
+    //   <View style={styles.itemInfo}>
+    //     <Text style={styles.itemTitle} numberOfLines={2}>
+    //       {item.titulo}
+    //     </Text>
+    //     <Text style={styles.itemDate}>{item.data}</Text>
+    //   </View>
+    //   <Ionicons name="chevron-forward" size={24} color="#777" />
+    // </TouchableOpacity>
     <TouchableOpacity
       style={styles.itemContainer}
       onPress={() => router.push(`/entradas/${item.id}`)} // Navega para o detalhe
     >
-      <Image source={{ uri: item.imagem }} style={styles.itemImage} />
+      <Ionicons name="document-text-outline" size={32} color="#E67E22" style={{ marginRight: 12 }} />
       <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle} numberOfLines={2}>
-          {item.titulo}
+        <Text style={styles.itemTitle}>{t('delivery')} #{item.id}</Text>
+        <Text style={styles.itemDate}>
+          {t('deliveryDate')}: {item.data}
         </Text>
-        <Text style={styles.itemDate}>{item.data}</Text>
       </View>
       <Ionicons name="chevron-forward" size={24} color="#777" />
     </TouchableOpacity>
@@ -219,7 +230,7 @@ export default function Entradas() {
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
-      <Header usuario="Andrea" pagina={"Entradas"} />
+      <Header usuario="Andrea" pagina={t("delivery")} />
 
       <ScrollView
         style={styles.container}
@@ -229,7 +240,7 @@ export default function Entradas() {
         {/* Seção de Upload (sem alteração) */}
         <View style={styles.tituloLinha}>
           <Ionicons name="add-circle-outline" size={22} color="#333" />
-          <Text style={styles.titulo}>{"Nova Entrada"}</Text>
+          <Text style={styles.titulo}>{t("newDelivery")}</Text>
         </View>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -252,7 +263,7 @@ export default function Entradas() {
         <View style={styles.tituloLinha}>
           <Ionicons name="time-outline" size={22} color="#34495E" />
           <Text style={[styles.titulo, { marginTop: 0 }]}>
-            {t("Ultimas Entradas")}
+            {t("lastDeliveries")}
           </Text>
         </View>
 
@@ -277,12 +288,10 @@ export default function Entradas() {
             data={ultimasEntradas}
             renderItem={renderItemLista}
             keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
             scrollEnabled={false}
-            columnWrapperStyle={styles.grid}
             ListEmptyComponent={
               pendingEntradas.length === 0 ? ( // Só mostra se pendentes tbm for 0
-                <Text style={styles.emptyText}>Nenhuma entrada registrada</Text>
+                <Text style={styles.emptyText}>{t('noDeliveriesRegistered')}</Text>
               ) : null
             }
           />
@@ -382,18 +391,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemContainer: {
-    width: "48%",
+    width: "100%",
     backgroundColor: "#FFF",
     borderRadius: 12,
-    padding: 12,
+    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
     marginBottom: 12,
-    flexDirection: "row", // Adicionado para alinhar ícone e texto
-    alignItems: "center", // Adicionado
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   // NOVO: Estilo para item pendente
   pendingItem: {

@@ -110,7 +110,7 @@ export default function DetalheDevolucao() {
           {item.revistas.nome || 'Revista desconhecida'}
         </Text>
         <Text style={styles.revistaEdicao}>
-          Edição: {item.revistas.numero_edicao || 'N/A'}
+          {t('edition')}: {item.revistas.numero_edicao || 'N/A'}
         </Text>
       </View>
       <Text style={styles.revistaQtd}>{item.qtd_a_devolver} un.</Text>
@@ -134,10 +134,10 @@ export default function DetalheDevolucao() {
       <>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>
-            Devolução #{devolucao.id_chamada_devolucao}
+            {t('return')} #{devolucao.id_chamada_devolucao}
           </Text>
           <Text style={styles.headerSubtitle}>
-            Data Limite: {new Date(devolucao.data_limite).toLocaleDateString('pt-BR')}
+            {t('limitDate')}: {new Date(devolucao.data_limite).toLocaleDateString('pt-BR')}
           </Text>
           <Text style={styles.headerStatus}>
             Status: <Text style={devolucao.status === 'aberta' ? styles.statusAberta : styles.statusFechada}>
@@ -146,7 +146,7 @@ export default function DetalheDevolucao() {
           </Text>
         </View>
 
-        <Text style={styles.listTitle}>Revistas a Devolver:</Text>
+        <Text style={styles.listTitle}>{t('toReturn')}:</Text>
         <FlatList
           data={devolucao.revistas_chamadasdevolucao}
           renderItem={renderItemRevista}
@@ -179,7 +179,7 @@ export default function DetalheDevolucao() {
             ) : (
               <>
                 <Ionicons name="checkmark-done-circle-outline" size={24} color="#fff" />
-                <Text style={styles.confirmButtonText}>Confirmar Devolução</Text>
+                <Text style={styles.confirmButtonText}>{t('confirmReturn')}</Text>
               </>
             )}
           </TouchableOpacity>

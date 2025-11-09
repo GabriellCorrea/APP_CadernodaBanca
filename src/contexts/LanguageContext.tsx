@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type LanguageCode = 'pt' | 'it' | 'en';
 
@@ -17,7 +18,8 @@ const translations = {
   pt: {
     // Header
     hello: 'Olá',
-    
+    selectLang: 'Selecionar Idioma',
+
     // Tela inicial
     dailyGoal: 'Meta do dia',
     progress: 'Progresso',
@@ -25,27 +27,28 @@ const translations = {
     start: 'Início',
     registerSale: 'Registrar Venda',
     editDailyGoal: 'Editar meta diária',
-    
+    lastSales: 'Últimas Vendas',
+
     // Navegação
     home: 'Início',
     stock: 'Estoque',
     salesPage: 'Vendas',
-    returns: 'Chamadas',
+    returns: 'Gestão',
     reports: 'Relatórios',
     calls: 'Chamadas',
     newCall: 'Nova Chamada',
     lastRegisteredCalls: 'Últimas Chamadas Registradas',
-    
+
     // Páginas
     reportsAndInsights: 'Relatórios e Insights',
     management: 'Gestão',
     managementHistory: 'Histórico de Gestão',
     registerCallButton: 'Registrar\nChamada',
     registerReturnButton: 'Registrar\nDevolução',
-    lastDeliveries: 'Últimas Entregas Registradas',
-    lastReturns: 'Últimas Devoluções Registradas',
+    // lastDeliveries: 'Últimas Entregas Registradas',
+    // lastReturns: 'Últimas Devoluções Registradas',
     loadingDeliveries: 'Carregando entregas...',
-    
+
     // Estoque
     searchMagazine: 'Buscar revista...',
     filters: 'Filtros',
@@ -54,7 +57,16 @@ const translations = {
     inStock: 'Em estoque',
     loadingMagazines: 'Carregando revistas...',
     noMagazineFound: 'Nenhuma revista encontrada.',
-    
+    addPhoto: 'Adicionar Foto',
+    photoExists: 'Produto já possui uma foto.',
+    barCode: 'Código de Barras',
+    typeCode: 'Digite o Código',
+    scanCode: 'Escanear Código',
+    saveCode: 'Salvar Código',
+    barCodeExists: '✅ Código de Barras já registrado.',
+    closeModal: 'Fechar',
+    targetCode: 'Aponte para o código de barras',
+
     // Vendas
     cameraPermissionNeeded: 'Precisamos da permissão para usar a câmera',
     allow: 'Permitir',
@@ -80,7 +92,13 @@ const translations = {
     success: 'Sucesso!',
     saleConfirmed: 'Venda confirmada com sucesso',
     saleError: 'Não foi possível confirmar a venda',
-    
+    savingCode: 'Salvando código...',
+    selectProduct: 'Selecione o produto na lista',
+
+    // Gestão
+    delivery: 'Entrega',
+    return: 'Devolução',
+
     // Devolução
     newReturn: 'Nova Devolução',
     product: 'Produto:',
@@ -98,22 +116,38 @@ const translations = {
     fileUploadSuccess: 'Arquivo enviado com sucesso!',
     fileUploadError: 'Não foi possível enviar o arquivo. Tente novamente.',
     filePickError: 'Erro ao selecionar o arquivo.',
-    
+    openReturns: 'Devoluções em Aberto',
+    noReturnsOpen: 'Nenhuma devolução em aberto.',
+    limitDate: 'Data Limite',
+    returnDetails: 'Detalhes da Devolução',
+    confirmReturn: 'Confirmar Devolução',
+    toReturn: 'Revistas a Devolver',
+    edition: 'Edição',
+
+    // Emtregas
+    newDelivery: 'Nova Entrega',
+    lastDeliveries: 'Últimas Entregas',
+    noDeliveriesRegistered: 'Nenhuma entrega Registrada',
+    deliveryDate: 'Data da Entrega',
+    deliveryDetails: 'Detalhes da Entrega',
+    recievedMagazines: 'Revistas Recebidas',
+    noMagazinesReceived: 'Nenhuma revista recebida.',
+
     // Mais vendidos
     loadingTopSellers: 'Carregando mais vendidos...',
-    
+
     // Relatórios
     salesToday: 'Vendas Hoje',
     products: 'Produtos',
     weekSales: 'Vendas da semana',
     averageTicket: 'Ticket médio',
     sales: 'vendas',
-    
+
     // Geral
     units: 'un.',
     qty: 'Qtd',
     salesLabel: 'Vendas',
-    
+
     // Métodos de pagamento
     paymentMethodTitle: 'Método de Pagamento',
     paymentMethod: 'Selecione a forma de pagamento',
@@ -123,7 +157,7 @@ const translations = {
     credit: 'Crédito',
     pix: 'Pix',
     cash: 'Dinheiro',
-    
+
     // Dias da semana
     monday: 'segunda-feira',
     tuesday: 'terça-feira',
@@ -132,7 +166,7 @@ const translations = {
     friday: 'sexta-feira',
     saturday: 'sábado',
     sunday: 'domingo',
-    
+
     // Abreviações dos dias da semana
     monAbbr: 'seg',
     tueAbbr: 'ter',
@@ -141,7 +175,7 @@ const translations = {
     friAbbr: 'sex',
     satAbbr: 'sab',
     sunAbbr: 'dom',
-    
+
     // Meses
     january: 'janeiro',
     february: 'fevereiro',
@@ -159,7 +193,8 @@ const translations = {
   it: {
     // Header
     hello: 'Ciao',
-    
+    selectLang: 'Seleziona la Lingua',
+
     // Tela inicial
     dailyGoal: 'Obiettivo del giorno',
     progress: 'Progresso',
@@ -167,27 +202,28 @@ const translations = {
     start: 'Inizio',
     registerSale: 'Registra Vendita',
     editDailyGoal: 'Modifica obiettivo giornaliero',
-    
+    lastSales: 'Ultime Vendite',
+
     // Navegação
     home: 'Inizio',
     stock: 'Magazzino',
     salesPage: 'Vendite',
-    returns: 'Resi',
+    returns: 'Gestione',
     reports: 'Rapporti',
     calls: 'Chiamate',
     newCall: 'Nuova Chiamata',
     lastRegisteredCalls: 'Ultime Chiamate Registrate',
-    
+
     // Páginas
     reportsAndInsights: 'Rapporti e Statistiche',
     management: 'Gestione',
     managementHistory: 'Cronologia Gestione',
     registerCallButton: 'Registra\nChiamata',
     registerReturnButton: 'Registra\nReso',
-    lastDeliveries: 'Ultime Consegne Registrate',
-    lastReturns: 'Ultimi Resi Registrati',
+    // lastDeliveries: 'Ultime Consegne Registrate',
+    // lastReturns: 'Ultimi Resi Registrati',
     loadingDeliveries: 'Caricamento consegne...',
-    
+
     // Estoque
     searchMagazine: 'Cerca rivista...',
     filters: 'Filtri',
@@ -196,7 +232,16 @@ const translations = {
     inStock: 'In magazzino',
     loadingMagazines: 'Caricamento riviste...',
     noMagazineFound: 'Nessuna rivista trovata.',
-    
+    addPhoto: 'Aggiungi Foto',
+    photoExists: 'Il prodotto ha già una foto.',
+    barCode: 'Codice a Barre',
+    typeCode: 'Digita il Codice',
+    scanCode: 'Scansione il Codice',
+    saveCode: 'Salva il Codice',
+    barCodeExists: '✅ Codice a Barre Registrato.',
+    closeModal: 'Chiudere',
+    targetCode: 'Indicare il codice a barre',
+
     // Vendas
     cameraPermissionNeeded: 'Abbiamo bisogno del permesso per usare la fotocamera',
     allow: 'Consenti',
@@ -222,7 +267,13 @@ const translations = {
     success: 'Successo!',
     saleConfirmed: 'Vendita confermata con successo',
     saleError: 'Non è stato possibile confermare la vendita',
-    
+    savingCode: 'Salvataggio codice...',
+    selectProduct: 'Seleziona il prodotto dalla lista',
+
+    // Gestão
+    delivery: 'Consegna',
+    return: 'Reso',
+
     // Chamadas
     newReturn: 'Nuovo Reso',
     product: 'Prodotto:',
@@ -240,22 +291,38 @@ const translations = {
     fileUploadSuccess: 'File caricato con successo!',
     fileUploadError: 'Non è stato possibile caricare il file. Riprova.',
     filePickError: 'Errore nella selezione del file.',
-    
+    openReturns: 'Apri Resi',
+    noReturnsOpen: 'Nessun reso aperto.',
+    limitDate: 'Scadenza',
+    returnDetails: 'Dettagli del Reso',
+    confirmReturn: 'Conferma Rezo',
+    toReturn: 'Riviste da Restituire',
+    edition: 'Edizione',
+
+    // Entregas
+    newDelivery: 'Nuova Consegna',
+    lastDeliveries: 'Ultime Consegne',
+    noDeliveriesRegistered: 'Nessuna consegna Registrata',
+    deliveryDate: 'Data di Consegna',
+    deliveryDetails: 'Dettagli della Consegna',
+    recievedMagazines: 'Riviste Ricevute',
+    noMagazinesReceived: 'Nessuna rivista ricevuta.',
+
     // Mais vendidos
     loadingTopSellers: 'Caricamento più venduti...',
-    
+
     // Relatórios
     salesToday: 'Vendite Oggi',
     products: 'Prodotti',
     weekSales: 'Vendite della settimana',
     averageTicket: 'Scontrino medio',
     sales: 'vendite',
-    
+
     // Geral
     units: 'un.',
     qty: 'Qtà',
     salesLabel: 'Vendite',
-    
+
     // Métodos de pagamento
     paymentMethodTitle: 'Metodo di Pagamento',
     paymentMethod: 'Seleziona il metodo di pagamento',
@@ -265,7 +332,7 @@ const translations = {
     credit: 'Credito',
     pix: 'Pix',
     cash: 'Contanti',
-    
+
     // Dias da semana
     monday: 'lunedì',
     tuesday: 'martedì',
@@ -274,7 +341,7 @@ const translations = {
     friday: 'venerdì',
     saturday: 'sabato',
     sunday: 'domenica',
-    
+
     // Abreviações dos dias da semana
     monAbbr: 'lun',
     tueAbbr: 'mar',
@@ -283,7 +350,7 @@ const translations = {
     friAbbr: 'ven',
     satAbbr: 'sab',
     sunAbbr: 'dom',
-    
+
     // Meses
     january: 'gennaio',
     february: 'febbraio',
@@ -301,7 +368,8 @@ const translations = {
   en: {
     // Header
     hello: 'Hello',
-    
+    selectLang: 'Select Language',
+
     // Tela inicial
     dailyGoal: 'Daily Goal',
     progress: 'Progress',
@@ -309,27 +377,28 @@ const translations = {
     start: 'Home',
     registerSale: 'Register Sale',
     editDailyGoal: 'Edit daily goal',
-    
+    lastSales: 'Last Sales',
+
     // Navegação
     home: 'Home',
     stock: 'Stock',
     salesPage: 'Sales',
-    returns: 'Returns',
+    returns: 'Management',
     reports: 'Reports',
     calls: 'Calls',
     newCall: 'New Call',
     lastRegisteredCalls: 'Last Registered Calls',
-    
+
     // Páginas
     reportsAndInsights: 'Reports and Analytics',
     management: 'Management',
     managementHistory: 'Management History',
     registerCallButton: 'Register\nCall',
     registerReturnButton: 'Register\nReturn',
-    lastDeliveries: 'Last Registered Deliveries',
-    lastReturns: 'Last Registered Returns',
+    // lastDeliveries: 'Last Registered Deliveries',
+    // lastReturns: 'Last Registered Returns',
     loadingDeliveries: 'Loading deliveries...',
-    
+
     // Estoque
     searchMagazine: 'Search magazine...',
     filters: 'Filters',
@@ -338,7 +407,16 @@ const translations = {
     inStock: 'In Stock',
     loadingMagazines: 'Loading magazines...',
     noMagazineFound: 'No magazine found.',
-    
+    addPhoto: 'Add Photo',
+    photoExists: 'Product already has a photo.',
+    barCode: 'Bar Code',
+    typeCode: 'Type the Bar Code',
+    scanCode: 'Scan Code',
+    saveCode: 'Save Code',
+    barCodeExists: '✅ Bar Code registered.',
+    closeModal: 'Close',
+    targetCode: 'Point to the bar code',
+
     // Vendas
     cameraPermissionNeeded: 'We need camera permission',
     allow: 'Allow',
@@ -364,7 +442,13 @@ const translations = {
     success: 'Success!',
     saleConfirmed: 'Sale confirmed successfully',
     saleError: 'Could not confirm the sale',
-    
+    savingCode: 'Saving code...',
+    selectProduct: 'Select the product from the list',
+
+    // Gestão
+    delivery: 'Delivery',
+    return: 'Return',
+
     // Chamadas
     newReturn: 'New Return',
     product: 'Product:',
@@ -382,22 +466,38 @@ const translations = {
     fileUploadSuccess: 'File uploaded successfully!',
     fileUploadError: 'Could not upload file. Please try again.',
     filePickError: 'Error selecting file.',
-    
+    openReturns: 'Open Returns',
+    noReturnsOpen: 'No returns open.',
+    limitDate: 'Limit Date',
+    returnDetails: 'Return Details',
+    confirmReturn: 'Confirm Return',
+    toReturn: 'Magazines to Return',
+    edition: 'Edition',
+
+    // Entregas
+    newDelivery: 'New Delivery',
+    lastDeliveries: 'Last Deliveries',
+    noDeliveriesRegistered: 'No deliveries Registered',
+    deliveryDate: 'Delivery Date',
+    deliveryDetails: 'Delivery Details',
+    recievedMagazines: 'Received Magazines',
+    noMagazinesReceived: 'No magazines received.',
+
     // Mais vendidos
     loadingTopSellers: 'Loading top sellers...',
-    
+
     // Relatórios
     salesToday: 'Sales Today',
     products: 'Products',
     weekSales: 'Week Sales',
     averageTicket: 'Average Ticket',
     sales: 'sales',
-    
+
     // Geral
     units: 'un.',
     qty: 'Qty',
     salesLabel: 'Sales',
-    
+
     // Métodos de pagamento
     paymentMethodTitle: 'Payment Method',
     paymentMethod: 'Select payment method',
@@ -407,7 +507,7 @@ const translations = {
     credit: 'Credit',
     pix: 'Pix',
     cash: 'Cash',
-    
+
     // Dias da semana
     monday: 'Monday',
     tuesday: 'Tuesday',
@@ -416,7 +516,7 @@ const translations = {
     friday: 'Friday',
     saturday: 'Saturday',
     sunday: 'Sunday',
-    
+
     // Abreviações dos dias da semana
     monAbbr: 'Mon',
     tueAbbr: 'Tue',
@@ -425,7 +525,7 @@ const translations = {
     friAbbr: 'Fri',
     satAbbr: 'Sat',
     sunAbbr: 'Sun',
-    
+
     // Meses
     january: 'January',
     february: 'February',
@@ -443,12 +543,33 @@ const translations = {
 };
 
 const LanguageContext = createContext<LanguageContextData>({} as LanguageContextData);
+const STORAGE_KEY = '@app_language';
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('pt');
 
-  const changeLanguage = (language: LanguageCode) => {
-    setCurrentLanguage(language);
+  // Carrega a língua salva no AsyncStorage ao iniciar o app
+  useEffect(() => {
+    (async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedLanguage) {
+          setCurrentLanguage(savedLanguage as LanguageCode);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar a língua:', error);
+      }
+    })();
+  }, []);
+
+  // Função para mudar de idioma e salvar no AsyncStorage
+  const changeLanguage = async (language: LanguageCode) => {
+    try {
+      setCurrentLanguage(language);
+      await AsyncStorage.setItem(STORAGE_KEY, language);
+    } catch (error) {
+      console.error('Erro ao salvar a língua:', error);
+    }
   };
 
   const t = (key: string): string => {
@@ -472,7 +593,7 @@ export function useLanguage(): LanguageContextData {
   const context = useContext(LanguageContext);
 
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    throw new Error('useLanguage deve ser usado dentro de um componente LanguageProvider');
   }
 
   return context;

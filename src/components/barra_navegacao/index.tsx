@@ -3,17 +3,19 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { styles } from "./styles";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const tabs = [
-    { name: "Início", route: "/home", icon: "home" },
-    { name: "Estoque", route: "/estoque", icon: "cube-outline" },
-    { name: "Vendas", route: "/vendas", icon: "cart-outline" },
-    { name: "Gestao", route: "/gestao", icon: "undo-variant" },
-    { name: "Relatórios", route: "/relatorios", icon: "chart-bar" },
+    { name: t("home"), route: "/home", icon: "home" },
+    { name: t("stock"), route: "/estoque", icon: "cube-outline" },
+    { name: t("salesPage"), route: "/vendas", icon: "cart-outline" },
+    { name: t("returns"), route: "/gestao", icon: "undo-variant" },
+    { name: t("reports"), route: "/relatorios", icon: "chart-bar" },
   ];
 
 return (

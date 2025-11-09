@@ -29,8 +29,6 @@ type RevistaEntrada = {
 type EntradaDetalhe = {
   id_documento_entrega: number;
   data_entrega: string;
-  numero_nota: string;
-  // O join vem aqui
   revistas_documentos_entrega: RevistaEntrada[];
 };
 
@@ -75,7 +73,7 @@ export default function DetalheEntrada() {
           {item.revistas.nome || 'Revista desconhecida'}
         </Text>
         <Text style={styles.revistaEdicao}>
-          Edição: {item.revistas.numero_edicao || 'N/A'}
+          {t('edition')}: {item.revistas.numero_edicao || 'N/A'}
         </Text>
       </View>
       {/* Campo correto da tabela de join */}
@@ -100,23 +98,20 @@ export default function DetalheEntrada() {
       <>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>
-            Entrada #{entrada.id_documento_entrega}
+            {t('delivery')} #{entrada.id_documento_entrega}
           </Text>
           <Text style={styles.headerSubtitle}>
-            Data: {new Date(entrada.data_entrega).toLocaleDateString('pt-BR')}
-          </Text>
-           <Text style={styles.headerStatus}>
-            Nota Fiscal: {entrada.numero_nota || 'N/A'}
+            {t('deliveryDate')}: {new Date(entrada.data_entrega).toLocaleDateString('pt-BR')}
           </Text>
         </View>
 
-        <Text style={styles.listTitle}>Revistas Recebidas:</Text>
+        <Text style={styles.listTitle}>{t('recievedMagazines')}:</Text>
         <FlatList
           data={entrada.revistas_documentos_entrega} // Usar o array correto
           renderItem={renderItemRevista}
           keyExtractor={(item) => item.id_revista.toString()}
           contentContainerStyle={{ paddingBottom: 50 }}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma revista nesta entrada.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{t('noMagazinesReceived')}</Text>}
         />
       </>
     );

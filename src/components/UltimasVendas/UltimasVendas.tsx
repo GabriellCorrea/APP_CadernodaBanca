@@ -30,7 +30,7 @@ export function UltimasVendas({ vendasRaw, loading }: VendasProps) {
   useEffect(() => {
     if (vendasRaw && Array.isArray(vendasRaw)) {
       // Reutiliza a lógica de mapeamento original
-      console.log("Mapeando vendasRaw:", vendasRaw);
+      // console.log("Mapeando vendasRaw:", vendasRaw);
       const mapeadas = vendasRaw.map((venda: any) => ({
         id_venda: venda.id_venda || venda.id,
         produto_nome: venda.nome || "Produto desconhecido",
@@ -38,7 +38,7 @@ export function UltimasVendas({ vendasRaw, loading }: VendasProps) {
         valor_total: parseFloat(venda.valor_total || venda.valor || 0),
         data_venda: venda.data_venda || venda.created_at || "",
       }));
-      console.log("Vendas mapeadas:", mapeadas);
+      // console.log("Vendas mapeadas:", mapeadas);
       setVendasMapeadas(mapeadas);
     } else {
       setVendasMapeadas([]); // Garante que seja um array vazio se a prop for inválida
@@ -79,7 +79,7 @@ export function UltimasVendas({ vendasRaw, loading }: VendasProps) {
     <View style={{ marginTop: 16 }}>
       <View style={styles.titleContainer}>
         <Feather name="clock" size={20} color="#333" />
-        <Text style={styles.title}>Últimas Vendas</Text>
+        <Text style={styles.title}>{t("lastSales")}</Text>
       </View>
 
       {/* 6. Usa o estado mapeado 'vendasMapeadas' */}
