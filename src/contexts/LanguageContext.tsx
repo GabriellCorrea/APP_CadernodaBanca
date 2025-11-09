@@ -189,6 +189,27 @@ const translations = {
     october: 'outubro',
     november: 'novembro',
     december: 'dezembro',
+
+    // Relatórios - KPIs
+    revenueToday: 'Faturamento Hoje',
+    unitsToday: 'Unidades Vendidas Hoje',
+    pendingReturns: 'Devoluções Pendentes',
+    nextReturn: 'Próxima Devolução',
+    revenue30d: 'Faturamento (30 dias)',
+    averageTicket30d: 'Ticket Médio (30 dias)',
+    
+    // Relatórios - Gráficos
+    top5MagazinesToday: 'Top 5 Revistas Vendidas (Hoje)',
+    salesByPayment30d: 'Vendas por Método de Pagamento (30 dias)',
+    total: 'Total',
+    
+    // Relatórios - Estados Vazios
+    noSalesToday: 'Nenhuma venda registrada hoje',
+    noSalesLast30Days: 'Nenhuma venda nos últimos 30 dias',
+    
+    // Relatórios - Geral
+    loadingData: 'Carregando dados...',
+    notAvailable: 'N/A',
   },
   it: {
     // Header
@@ -364,6 +385,27 @@ const translations = {
     october: 'ottobre',
     november: 'novembre',
     december: 'dicembre',
+
+    // Relatórios - KPIs
+    revenueToday: 'Fatturato Oggi',
+    unitsToday: 'Unità Vendite Oggi',
+    pendingReturns: 'Resi in Sospeso',
+    nextReturn: 'Prossimo Reso',
+    revenue30d: 'Fatturato (30 giorni)',
+    averageTicket30d: 'Scontrino Medio (30 giorni)',
+    
+    // Relatórios - Gráficos
+    top5MagazinesToday: 'Top 5 Riviste Vendute (Oggi)',
+    salesByPayment30d: 'Vendite per Metodo di Pagamento (30 giorni)',
+    total: 'Totale',
+    
+    // Relatórios - Estados Vazios
+    noSalesToday: 'Nessuna vendita registrata oggi',
+    noSalesLast30Days: 'Nessuna vendita negli ultimi 30 giorni',
+    
+    // Relatórios - Geral
+    loadingData: 'Caricamento dati...',
+    notAvailable: 'N/D',
   },
   en: {
     // Header
@@ -539,6 +581,27 @@ const translations = {
     october: 'October',
     november: 'November',
     december: 'December',
+
+    // Relatórios - KPIs
+    revenueToday: 'Revenue Today',
+    unitsToday: 'Units Saled Today',
+    pendingReturns: 'Pending Returns',
+    nextReturn: 'Next Return',
+    revenue30d: 'Revenue (30 days)',
+    averageTicket30d: 'Average Ticket (30 days)',
+    
+    // Relatórios - Gráficos
+    top5MagazinesToday: 'Top 5 Magazines Sold (Today)',
+    salesByPayment30d: 'Sales by Payment Method (30 days)',
+    total: 'Total',
+    
+    // Relatórios - Estados Vazios
+    noSalesToday: 'No sales recorded today',
+    noSalesLast30Days: 'No sales in the last 30 days',
+    
+    // Relatórios - Geral
+    loadingData: 'Loading data...',
+    notAvailable: 'N/A',
   },
 };
 

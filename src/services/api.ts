@@ -139,6 +139,139 @@ export const apiService = {
       const res = await api.get('/relatorios/vendas/dashboard-geral')
       return res.data?.data // Retorna o objeto {hoje, semana, ticket_medio, mais_vendidos}
     },
+    async kpiFaturamentoHoje() {
+  try {
+    const res = await api.get('/relatorios/kpi/faturamento-hoje');
+    return res.data?.data || { faturamento_hoje: 0 };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar faturamento hoje:', error.message);
+    return { faturamento_hoje: 0 };
+  }
+},
+
+/**
+ * CARD 2: Unidades Vendidas Hoje
+ */
+async kpiUnidadesHoje() {
+  try {
+    const res = await api.get('/relatorios/kpi/unidades-hoje');
+    return res.data?.data || { unidades_vendidas_hoje: 0 };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar unidades hoje:', error.message);
+    return { unidades_vendidas_hoje: 0 };
+  }
+},
+
+/**
+ * CARD 3: Devoluções Pendentes
+ */
+async kpiDevolucoesPendentes() {
+  try {
+    const res = await api.get('/relatorios/kpi/devolucoes-pendentes');
+    return res.data?.data || { devolucoes_pendentes: 0 };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar devoluções pendentes:', error.message);
+    return { devolucoes_pendentes: 0 };
+  }
+},
+
+/**
+ * CARD 4: Próxima Data Limite de Devolução
+ */
+async kpiProximaDevolucao() {
+  try {
+    const res = await api.get('/relatorios/kpi/proxima-devolucao');
+    return res.data?.data || { proxima_data_limite: null };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar próxima devolução:', error.message);
+    return { proxima_data_limite: null };
+  }
+},
+
+/**
+ * CARD 5: Faturamento dos Últimos 30 Dias
+ */
+async kpiFaturamento30d() {
+  try {
+    const res = await api.get('/relatorios/kpi/faturamento-30d');
+    return res.data?.data || { faturamento_ultimos_30_dias: 0 };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar faturamento 30d:', error.message);
+    return { faturamento_ultimos_30_dias: 0 };
+  }
+},
+
+/**
+ * CARD 6: Ticket Médio dos Últimos 30 Dias
+ */
+async kpiTicketMedio30d() {
+  try {
+    const res = await api.get('/relatorios/kpi/ticket-medio-30d');
+    return res.data?.data || { ticket_medio_ultimos_30_dias: 0 };
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar ticket médio 30d:', error.message);
+    return { ticket_medio_ultimos_30_dias: 0 };
+  }
+},
+
+/**
+ * Endpoints de Relatórios - Gráficos
+ */
+
+/**
+ * GRÁFICO 1: Top 5 Revistas Vendidas Hoje
+ * Retorna array: [{ nome: string, total_vendido: number }]
+ */
+async graficoTop5RevistasHoje() {
+  try {
+    const res = await api.get('/relatorios/grafico/top5-revistas-hoje');
+    const data = res.data?.data;
+    
+    // Validar se é um array válido
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ Top 5 revistas não retornou array, usando array vazio');
+      return [];
+    }
+    
+    // Validar estrutura de cada item
+    return data.filter(item => 
+      item && 
+      typeof item.nome === 'string' && 
+      typeof item.total_vendido === 'number'
+    );
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar top 5 revistas:', error.message);
+    return [];
+  }
+},
+
+/**
+ * GRÁFICO 2: Vendas por Método de Pagamento (Últimos 30 dias)
+ * Retorna array: [{ metodo_pagamento: string, faturamento: number, quantidade_vendas: number }]
+ */
+async graficoVendasPorPagamento30d() {
+  try {
+    const res = await api.get('/relatorios/grafico/vendas-por-pagamento-30d');
+    const data = res.data?.data;
+    
+    // Validar se é um array válido
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ Vendas por pagamento não retornou array, usando array vazio');
+      return [];
+    }
+    
+    // Validar estrutura de cada item
+    return data.filter(item => 
+      item && 
+      typeof item.metodo_pagamento === 'string' && 
+      typeof item.faturamento === 'number' &&
+      typeof item.quantidade_vendas === 'number'
+    );
+  } catch (error: any) {
+    console.error('❌ Erro ao buscar vendas por pagamento:', error.message);
+    return [];
+  }
+  },
   },
 
   /**
@@ -272,5 +405,5 @@ export const apiService = {
       const res = await api.get('/ping')
       return res.data
     },
-  }
+  },
 }
