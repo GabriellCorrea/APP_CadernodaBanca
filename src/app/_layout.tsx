@@ -3,22 +3,16 @@ import { LogBox } from 'react-native';
 import { LanguageProvider } from '../contexts/LanguageContext';
 
 LogBox.ignoreAllLogs(); // Ignora todos os logs de aviso
+
 export default function RootLayout() {
   return (
     <LanguageProvider>
       <Stack screenOptions={{ headerShown: false }}>
+        {/* A tela de login, na raiz do app */}
         <Stack.Screen name="index" />
-        <Stack.Screen name="home" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="vendas" />
-        <Stack.Screen name="estoque" />
-        <Stack.Screen name="relatorios" />
 
-        <Stack.Screen name="gestao" />
-        <Stack.Screen name="entradas" />
-        <Stack.Screen name="entradas/[id]" />
-        <Stack.Screen name="devolucoes" />
-        <Stack.Screen name="devolucoes/[id]" />
+        {/* O grupo "(tabs)" que contém todas as telas principais do app */}
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </LanguageProvider>
   );

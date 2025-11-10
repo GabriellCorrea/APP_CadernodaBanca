@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { ProdutoEstoque } from "../../app/vendas";
+import { ProdutoEstoque } from "../../app/(tabs)/vendas";
 
 const getFriendlyErrorMessage = (
   err: any,
@@ -58,13 +58,13 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
     if (loading || codigo === lastScannedCode || error) return;
     const codigoLimpo = codigo.trim();
    if (
-      !codigoLimpo || 
-      codigoLimpo.length < 8 || 
+      !codigoLimpo ||
+      codigoLimpo.length < 8 ||
       codigoLimpo.length > 18 ||
       !/^\d+$/.test(codigoLimpo) // Verifica se é 100% numérico
     ) {
       // console.log(`Código ignorado (não passou nos filtros): ${codigoLimpo}`);
-      return; 
+      return;
     }
 
     // console.log("Código escaneado:", codigoLimpo);
@@ -86,7 +86,7 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
       }
 
       onScanSuccess(produtoEncontrado);
-      
+
       setTimeout(() => setScanned(false), 1000);
     } catch (error: any) {
       const status = error.response?.status;
@@ -104,7 +104,7 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
       setTimeout(() => {
         setScanned(false);
         setLastScannedCode(null);
-      }, 2000); 
+      }, 2000);
     }
   };
 
@@ -174,11 +174,11 @@ const styles = StyleSheet.create({
   },
   fotoBox: {
     width: "100%",
-    aspectRatio: 1, 
+    aspectRatio: 1,
     borderRadius: 12,
     overflow: "hidden",
     marginVertical: 0,
-    backgroundColor: '#000', 
+    backgroundColor: '#000',
   },
   botao: {
     backgroundColor: "#E67E22",

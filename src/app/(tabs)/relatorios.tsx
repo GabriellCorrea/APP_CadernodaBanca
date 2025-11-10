@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
@@ -21,7 +20,7 @@ export default function Relatorios() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Estados dos KPIs
   const [kpiFaturamentoHoje, setKpiFaturamentoHoje] = useState({ faturamento_hoje: 0 });
   const [kpiUnidadesHoje, setKpiUnidadesHoje] = useState({ unidades_vendidas_hoje: 0 });
@@ -38,7 +37,7 @@ export default function Relatorios() {
     metodo_pagamento?: string;
     faturamento?: number;
   }
-  
+
   const [top5Revistas, setTop5Revistas] = useState<Revista[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
 
@@ -75,7 +74,7 @@ export default function Relatorios() {
       if (Array.isArray(dataTop5) && dataTop5.length > 0) {
         setTop5Revistas(dataTop5);
       }
-      
+
       if (Array.isArray(dataPagamentos) && dataPagamentos.length > 0) {
         setPagamentos(dataPagamentos);
       }
@@ -127,8 +126,8 @@ export default function Relatorios() {
 
   const totalFaturamento = pagamentos.reduce((acc, item) => acc + (item.faturamento || 0), 0);
   const chartPagamentosData = pagamentos.map((item, index) => {
-    const percentual = totalFaturamento > 0 
-      ? (((item.faturamento ?? 0) / totalFaturamento) * 100).toFixed(0) 
+    const percentual = totalFaturamento > 0
+      ? (((item.faturamento ?? 0) / totalFaturamento) * 100).toFixed(0)
       : 0;
     return {
       value: parseFloat(percentual.toString()),
@@ -146,9 +145,7 @@ export default function Relatorios() {
           <ActivityIndicator size="large" color="#E67E22" />
           <Text style={styles.loadingText}>{t('loadingData')}</Text>
         </View>
-        <View style={styles.bottomNavContainer}>
-          <BottomNav />
-        </View>
+        {/* <BottomNav /> FOI REMOVIDO DAQUI */}
       </SafeAreaView>
     );
   }
@@ -243,7 +240,7 @@ export default function Relatorios() {
                      // @ts-ignore
                        tooltipStyle.top = 0;
                      // @ts-ignore
-                   
+
                    } else tooltipStyle.bottom = 0;
                    // @ts-ignore
                    if (ultimo == index) tooltipStyle.right = 0;
@@ -280,7 +277,7 @@ export default function Relatorios() {
               <PieChart
                 data={chartPagamentosData}
                 donut
-                innerRadius={90}  
+                innerRadius={90}
                 radius={160}
                 centerLabelComponent={() => (
                   <View style={styles.centerLabel}>
@@ -293,7 +290,7 @@ export default function Relatorios() {
                 textSize={15}
                 fontWeight="bold"
               />
-              
+
               {/* Legenda */}
               <View style={styles.legend}>
                 {pagamentos.map((item, index) => (
@@ -318,9 +315,7 @@ export default function Relatorios() {
         )}
       </ScrollView>
 
-      <View style={styles.bottomNavContainer}>
-        <BottomNav />
-      </View>
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
@@ -335,14 +330,9 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 90,
+    paddingBottom: 90, // Mantenha um padding inferior para o scroll
   },
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -498,7 +488,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     minWidth: 120,
     maxWidth: width * 0.5,
-    minHeight: 120 
+    minHeight: 120
   },
 
   tooltipContent: {
@@ -508,7 +498,7 @@ const styles = StyleSheet.create({
 
   tooltipLabel: {
     color: 'white',
-    fontSize: 14, 
+    fontSize: 14,
     fontWeight: '700',
   },
 

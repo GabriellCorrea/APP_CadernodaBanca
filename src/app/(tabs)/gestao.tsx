@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
@@ -36,9 +35,7 @@ export default function Gestao() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomNavContainer}>
-        <BottomNav />
-      </View>
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
@@ -84,10 +81,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
 });

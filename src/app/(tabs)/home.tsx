@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import { UltimasVendas } from "@/components/UltimasVendas/UltimasVendas";
@@ -60,9 +59,9 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false); // Estado para o RefreshControl
   const [error, setError] = useState<string | null>(null);
 
- 
+
   const carregarHomeData = useCallback(async (isRefresh = false) => {
-    
+
     if (!isRefresh) {
       setLoading(true);
     }
@@ -70,8 +69,8 @@ export default function Home() {
 
     try {
       const data = await apiService.relatorios.home();
-      
-      
+
+
 
       if (data) {
         setFaturamento(data.faturamento_do_dia || 0);
@@ -166,16 +165,14 @@ export default function Home() {
               </View>
             </TouchableOpacity>
 
-            
+
             <UltimasVendas vendasRaw={ultimasVendas} loading={loading || refreshing} />
           </>
         )}
 
       </ScrollView>
 
-      <View style={styles.bottomNavContainer}>
-        <BottomNav />
-      </View>
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
@@ -190,15 +187,10 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 160,
+    paddingBottom: 160, // Aumente se necessário para o scroll
     flexGrow: 1, //Garante que o scroll ocupe espaço mesmo com pouco conteúdo
   },
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
   fixedRegistrarVendaBtn: {
     position: "relative",
     bottom: 0,
@@ -233,10 +225,10 @@ const styles = StyleSheet.create({
   },
   // Estilo de erro antigo
   errorText: {
-    color: '#D32F2F', 
+    color: '#D32F2F',
     textAlign: 'center',
     fontSize: 16,
-    marginBottom: 20, 
+    marginBottom: 20,
   },
   // Estilos para o container de erro e botão
   loader: {

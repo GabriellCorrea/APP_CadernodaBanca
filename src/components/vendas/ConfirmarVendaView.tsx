@@ -1,6 +1,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { ProdutoEstoque } from "../../app/vendas";
+import { ProdutoEstoque } from "../../app/(tabs)/vendas";
 
 type ConfirmarVendaViewProps = {
   produto: ProdutoEstoque;

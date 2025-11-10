@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { CardRevista } from "@/components/card_revista";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -68,7 +67,7 @@ export default function Estoque() {
   async function carregarRevistas() {
     try {
       setLoading(true);
-      // 1. Alterado para o novo endpoint da api.ts 
+      // 1. Alterado para o novo endpoint da api.ts
       const revistas = await apiService.revistas.estoque();
       const revistasFormatadas = revistas.map(r => {
         if (r.url_revista) {
@@ -280,9 +279,7 @@ export default function Estoque() {
           </Text>
           <Button onPress={requisitarPermissao} title="Conceder Permissão" />
         </View>
-        <View style={styles.bottomNavContainer}>
-          <BottomNav />
-        </View>
+        {/* <BottomNav /> FOI REMOVIDO DAQUI */}
       </SafeAreaView>
     );
   }
@@ -381,10 +378,7 @@ export default function Estoque() {
         </ScrollView>
       </View>
 
-      {/* Barra fixa no rodapé */}
-      <View style={styles.bottomNavContainer}>
-        <BottomNav />
-      </View>
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
 
       {/* --- Modal de Edição --- */}
       <Modal
@@ -606,14 +600,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingBottom: 120,
+    paddingBottom: 120, // Ajuste este padding se necessário
   },
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
 });
 
 // Estilos para o Modal de Edição

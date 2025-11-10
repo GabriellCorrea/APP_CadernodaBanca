@@ -1,7 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { ProdutoEstoque } from "../../app/vendas";
+import { ProdutoEstoque } from "../../app/(tabs)/vendas";
 
 type VendaPorListaProps = {
   onProdutoSelecionado: (produto: ProdutoEstoque) => void;

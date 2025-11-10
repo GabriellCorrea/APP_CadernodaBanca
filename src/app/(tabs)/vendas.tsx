@@ -1,12 +1,12 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { ConfirmarVendaView } from "@/components/vendas/ConfirmarVendaView";
 import { ScannerView } from "@/components/vendas/ScannerView";
-
 import { VendaPorLista } from "@/components/vendas/VendaPorLista";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
+// --- CORREÇÃO AQUI ---
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// ---------------------
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -78,17 +78,15 @@ export default function Vendas() {
   };
 
   const handleScanFailed = (barcode: string) => {
-    // console.log("Scan falhou. Código:", barcode);
     setFailedBarcode(barcode);
     setIsListModalVisible(true);
   };
 
   const handleProductSelectedFromList = (product: ProdutoEstoque) => {
-    setIsListModalVisible(false); // Fecha o modal da lista
+    setIsListModalVisible(false);
 
-    if (!failedBarcode) return; // Segurança
+    if (!failedBarcode) return;
 
-    // Pergunta ao usuário se quer associar
     Alert.alert(
       "Associar Código de Barras?",
       `Deseja guardar o código "${failedBarcode}" para a revista "${product.nome}"?`,
@@ -101,14 +99,13 @@ export default function Vendas() {
         {
           text: "Não, Apenas Vender",
           onPress: () => {
-            // Vende o produto sem associar o código
             setFailedBarcode(null);
             handleProdutoSelecionado(product);
           }
         },
         {
           text: "Sim, Associar e Vender",
-          onPress: () => handleSaveCodeAndSell(product) // Chama a Função 4
+          onPress: () => handleSaveCodeAndSell(product)
         },
       ]
     );
@@ -117,7 +114,7 @@ export default function Vendas() {
   const handleSaveCodeAndSell = async (product: ProdutoEstoque) => {
     if (loading || !failedBarcode || !product) return;
 
-    const numero_edicao = (product as any).numero_edicao || product.id_revista; // Fallback
+    const numero_edicao = (product as any).numero_edicao || product.id_revista;
 
     const dados = {
       nome: String(product.nome).trim(),
@@ -132,13 +129,12 @@ export default function Vendas() {
     try {
       setLoading(true);
       await apiService.revistas.cadastrarCodigo(dados);
-      Alert.alert(t("success"), t("barcodeAssociatedSuccessfully"));
+      Alert.alert(t("success"), "Código de barras associado com sucesso!"); // Usar i18n se tiver
 
       const produtoAtualizado = { ...product, codigo_barras: failedBarcode };
       handleProdutoSelecionado(produtoAtualizado);
     } catch (error) {
-      // console.error("Erro ao associar código de barras:", error);
-      Alert.alert(t("error"), t("failedToAssociateBarcode"));
+      Alert.alert(t("error"), "Falha ao associar código de barras."); // Usar i18n se tiver
     } finally {
       setLoading(false);
       setFailedBarcode(null);
@@ -153,7 +149,6 @@ export default function Vendas() {
     <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       <Header usuario="Andrea" pagina={t("salesPage")} />
 
-      {/* Loading global para salvar o código */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#FFF" />
@@ -179,15 +174,12 @@ export default function Vendas() {
 
 
               {!produtoSelecionado ? (
-                //  TELA 1 : SCANNER
-
                 <ScannerView
                   onScanSuccess={handleProdutoSelecionado}
                   onScanFail={handleScanFailed}
                   apiOnline={apiOnline}
                 />
               ) : (
-                // TELA 2: CONFIRMAÇÃO DE VENDA
                 <ConfirmarVendaView
                   produto={produtoSelecionado}
                   onCancelar={handleCancelarVenda}
@@ -225,14 +217,10 @@ export default function Vendas() {
           />
         </SafeAreaView>
       </Modal>
-      <BottomNav />
     </SafeAreaView>
   );
 }
 
-// ========================================================================
-// ESTILOS
-// ========================================================================
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
@@ -307,4 +295,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-

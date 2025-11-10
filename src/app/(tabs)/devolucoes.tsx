@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
@@ -293,7 +292,7 @@ export default function Devolucoes() {
 
       {/* Modais de Processing e Success foram REMOVIDOS */}
 
-      <BottomNav />
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
