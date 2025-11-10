@@ -1,7 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -25,19 +25,19 @@ const getFriendlyErrorMessage = (
   return err.message || t("saleError", "Ocorreu um erro ao carregar os dados.");
 };
 
-
 type ScannerViewProps = {
  onScanSuccess: (produto: ProdutoEstoque) => void;
  onScanFail: (barcode: string) => void;
  apiOnline: boolean;
+ isPaused: boolean; // <-- NOVA PROP
 };
 
 
-export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerViewProps) {
+export function ScannerView({ onScanSuccess, onScanFail, apiOnline, isPaused }: ScannerViewProps) {
   const { t } = useLanguage();
   const [facing, setFacing] = useState<CameraType>("back");
   const [loading, setLoading] = useState(false);
-  const [scanned, setScanned] = useState(false);
+  const [scanned, setScanned] = useState(false); // Estado interno
   const [error, setError] = useState<string | null>(null);
   const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
   const [lastScanTime, setLastScanTime] = useState<number>(0);
@@ -52,22 +52,18 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
 
   const buscarProduto = async (codigo: string) => {
     const agora = Date.now();
-    // Throttle: não processa mais de 1 scan a cada 2 segundos
     if (agora - lastScanTime < 2000) return;
-    // Não processa se já estiver a carregar, se for o mesmo código, ou se houver um erro ativo
     if (loading || codigo === lastScannedCode || error) return;
+    
     const codigoLimpo = codigo.trim();
-   if (
-      !codigoLimpo ||
-      codigoLimpo.length < 8 ||
+    if (
+      !codigoLimpo || 
+      codigoLimpo.length < 8 || 
       codigoLimpo.length > 18 ||
-      !/^\d+$/.test(codigoLimpo) // Verifica se é 100% numérico
+      !/^\d+$/.test(codigoLimpo)
     ) {
-      // console.log(`Código ignorado (não passou nos filtros): ${codigoLimpo}`);
-      return;
+      return; 
     }
-
-    // console.log("Código escaneado:", codigoLimpo);
 
     setLastScanTime(agora);
     setScanned(true);
@@ -86,29 +82,26 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
       }
 
       onScanSuccess(produtoEncontrado);
-
-      setTimeout(() => setScanned(false), 1000);
+      
     } catch (error: any) {
       const status = error.response?.status;
       if (status === 404 || status === 500) {
-        // console.warn(`Código não encontrado (status: ${status}). Chamando onScanFail.`);
         onScanFail(codigoLimpo);
       } else {
-        // console.error("❌ Erro na busca de produto:", { error });
-        // const friendlyMessage = getFriendlyErrorMessage(error, t);
-        // setError(friendlyMessage);
+        const friendlyMessage = getFriendlyErrorMessage(error, t);
+        setError(friendlyMessage);
       }
-
     } finally {
       setLoading(false);
+      // Reseta o scanner após 2s, se não for pausado
       setTimeout(() => {
         setScanned(false);
         setLastScannedCode(null);
-      }, 2000);
+      }, 2000); 
     }
   };
 
-  if (!permission) return <View />;
+  if (!permission) return <View style={styles.container}><ActivityIndicator color="#E67E22" /></View>;
 
   if (!permission.granted) {
     return (
@@ -124,106 +117,116 @@ export function ScannerView({ onScanSuccess, onScanFail, apiOnline }: ScannerVie
   }
 
   return (
-    <>
+    // O View raiz agora tem flex: 1 para preencher o card
+    <View style={styles.container}> 
       <CameraView
-        style={styles.fotoBox}
+        style={styles.camera}
         facing={facing}
         barcodeScannerSettings={{
           barcodeTypes: ["code128", "ean13", "ean8", "qr"],
         }}
-        onBarcodeScanned={(result) => {
-          if (result.data && !error) buscarProduto(result.data);
+        // "Desliga" o scanner se estiver pausado, carregando, ou com erro
+        onBarcodeScanned={isPaused || loading || error ? undefined : (result) => {
+          if (result.data) buscarProduto(result.data);
         }}
       />
+      
+      {/* UI de Status (Loading) */}
       {loading && (
-        <View style={styles.statusInfo}>
+        <View style={styles.statusOverlay}>
           <ActivityIndicator size="large" color="#E67E22" />
           <Text style={styles.statusTexto}>{t("searchingProduct")}</Text>
         </View>
       )}
 
-      {error &&  !loading && (
-        <View style={[styles.statusInfo, styles.errorBox]}>
+      {/* UI de Status (Error) */}
+      {error && !loading && (
+        <View style={[styles.statusOverlay, styles.errorBox]}>
           <Text style={[styles.statusTexto, styles.errorText]}>{error}</Text>
           <TouchableOpacity
             style={[styles.botao, styles.retryButtonScanner]}
             onPress={handleClearError}
           >
-            <Text style={styles.botaoTexto}>{t("tryAgain")}</Text>
+            <Text style={styles.botaoTexto}>Tentar Novamente</Text>
           </TouchableOpacity>
         </View>
       )}
 
+      {/* UI de Status (Waiting) */}
       {!loading && !error && (
-        <View style={styles.statusInfo}>
+        <View style={styles.statusInfoBottom}>
           <Text style={styles.statusTexto}>
-            {scanned ? t("waiting") : t("scanBarcode")}
+            {isPaused ? t("waiting") : t("scanBarcode")}
           </Text>
         </View>
       )}
-    </>
+    </View>
   );
 }
 
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
+  container: {
+    flex: 1, // <--- OCUPA O ESPAÇO DO CARD
+    width: "100%",
+    justifyContent: "center",
     alignItems: "center",
-  },
-  fotoBox: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    marginVertical: 0,
+    borderRadius: 12, // <--- ADICIONADO
+    overflow: "hidden", // <--- ADICIONADO
     backgroundColor: '#000',
-  },
-  botao: {
-    backgroundColor: "#E67E22",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-  },
+  },
+  camera: {
+    ...StyleSheet.absoluteFillObject, // <--- PREENCHE O CONTAINER
+  },
+  botao: {
+    backgroundColor: "#E67E22",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+  },
   retryButtonScanner: {
     paddingVertical: 10,
     paddingHorizontal: 16,
     marginTop: 12,
   },
-  botaoTexto: {
-    color: "#FFF",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  statusInfo: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 15,
-    padding: 15,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    width: "100%",
-    minHeight: 100,
-    borderLeftWidth: 4,
-    borderLeftColor: "#E67E22",
-  },
-  statusTexto: {
-    fontSize: 14,
-    color: "#6c757d",
-    textAlign: "center",
-     marginTop: 8, // Corrigido (removido o 'image')
-    fontWeight: "500",
-  },
+  botaoTexto: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  // Overlay para Loading e Erro (centralizado)
+  statusOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 20,
+  },
+  // View para "Aguardando" (embaixo)
+  statusInfoBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 15,
+    backgroundColor: "rgba(248, 249, 250, 0.9)",
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  statusTexto: {
+    fontSize: 16, // Aumentado
+    color: "#333",
+    textAlign: "center",
+    fontWeight: "500",
+  },
   errorBox: {
-    borderLeftColor: "#D32F2F",
-    backgroundColor: "#FDECEA",
+    backgroundColor: 'rgba(253, 236, 234, 0.95)',
   },
   errorText: {
     color: '#D32F2F',

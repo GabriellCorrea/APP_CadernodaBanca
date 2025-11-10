@@ -1,6 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useData } from "@/contexts/DataContext"; // <--- ADICIONADO
 import { apiService } from "@/services/api";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -25,6 +26,7 @@ export function ConfirmarVendaView({
   setApiOnline,
 }: ConfirmarVendaViewProps) {
   const { t } = useLanguage();
+  const { refreshData } = useData(); // <--- ADICIONADO
   const [quantidade, setQuantidade] = useState("1");
   const [desconto, setDesconto] = useState("0");
   const [metodoPagamento, setMetodoPagamento] = useState<string | null>(null);
@@ -76,6 +78,9 @@ export function ConfirmarVendaView({
     try {
       await apiService.vendas.cadastrarPorId(payload);
       setApiOnline(true);
+      
+      refreshData(); // <--- ADICIONADO
+
       Alert.alert(t("success"), t("saleConfirmed"), [
         { text: t("ok"), onPress: onCancelar },
       ]);

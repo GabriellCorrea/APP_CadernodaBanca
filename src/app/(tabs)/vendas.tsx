@@ -4,9 +4,7 @@ import { ScannerView } from "@/components/vendas/ScannerView";
 import { VendaPorLista } from "@/components/vendas/VendaPorLista";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
-// --- CORREÇÃO AQUI ---
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// ---------------------
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -43,9 +41,16 @@ export default function Vendas() {
   const [failedBarcode, setFailedBarcode] = useState<string | null>(null);
   const [isListModalVisible, setIsListModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // NOVO ESTADO: Controla se o scanner deve estar ativo
+  const [isScannerPaused, setIsScannerPaused] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      // Reseta o scanner e o produto ao focar na tela
+      setProdutoSelecionado(null);
+      setIsScannerPaused(false);
+
       const checkAuthAndApi = async () => {
         try {
           const token = await AsyncStorage.getItem("access_token");
@@ -74,17 +79,20 @@ export default function Vendas() {
       Alert.alert(t("error"), "Produto inválido ou não registrado corretamente.");
       return;
     }
+    setIsScannerPaused(true); // Pausa o scanner ao selecionar
     setProdutoSelecionado(produto);
   };
 
   const handleScanFailed = (barcode: string) => {
+    setIsScannerPaused(true); // Pausa o scanner
     setFailedBarcode(barcode);
     setIsListModalVisible(true);
   };
 
   const handleProductSelectedFromList = (product: ProdutoEstoque) => {
-    setIsListModalVisible(false);
-
+    setIsListModalVisible(false); // Fecha o modal
+    // O scanner continua pausado (isScannerPaused = true)
+    
     if (!failedBarcode) return;
 
     Alert.alert(
@@ -94,12 +102,16 @@ export default function Vendas() {
         {
           text: "Cancelar",
           style: "cancel",
-          onPress: () => setFailedBarcode(null),
+          onPress: () => {
+            setFailedBarcode(null);
+            setIsScannerPaused(false); // Libera o scanner
+          },
         },
         {
           text: "Não, Apenas Vender",
           onPress: () => {
             setFailedBarcode(null);
+            // setIsScannerPaused(false); // Não precisa, pois vamos selecionar o produto
             handleProdutoSelecionado(product);
           }
         },
@@ -129,20 +141,22 @@ export default function Vendas() {
     try {
       setLoading(true);
       await apiService.revistas.cadastrarCodigo(dados);
-      Alert.alert(t("success"), "Código de barras associado com sucesso!"); // Usar i18n se tiver
+      Alert.alert(t("success"), "Código de barras associado com sucesso!");
 
       const produtoAtualizado = { ...product, codigo_barras: failedBarcode };
-      handleProdutoSelecionado(produtoAtualizado);
+      handleProdutoSelecionado(produtoAtualizado); // Seleciona o produto
     } catch (error) {
-      Alert.alert(t("error"), "Falha ao associar código de barras."); // Usar i18n se tiver
+      Alert.alert(t("error"), "Falha ao associar código de barras.");
     } finally {
       setLoading(false);
       setFailedBarcode(null);
+      // Não libera o scanner, pois o produto foi selecionado
     }
   };
 
   const handleCancelarVenda = () => {
     setProdutoSelecionado(null);
+    setIsScannerPaused(false); // Libera o scanner
   };
 
   return (
@@ -172,14 +186,19 @@ export default function Vendas() {
                 </View>
               )}
 
-
+              {/* LÓGICA DE RENDERIZAÇÃO ATUALIZADA */}
               {!produtoSelecionado ? (
+                // TELA 1: SCANNER
+                // O ScannerView agora ocupa o espaço e gerencia sua própria UI
                 <ScannerView
                   onScanSuccess={handleProdutoSelecionado}
                   onScanFail={handleScanFailed}
                   apiOnline={apiOnline}
+                  // Pausa o scanner se o modal estiver visível OU se estivermos pausados
+                  isPaused={isListModalVisible || isScannerPaused} 
                 />
               ) : (
+                // TELA 2: CONFIRMAÇÃO DE VENDA
                 <ConfirmarVendaView
                   produto={produtoSelecionado}
                   onCancelar={handleCancelarVenda}
@@ -195,7 +214,10 @@ export default function Vendas() {
       <Modal
         visible={isListModalVisible}
         animationType="slide"
-        onRequestClose={() => setIsListModalVisible(false)}
+        onRequestClose={() => {
+          setIsListModalVisible(false);
+          setIsScannerPaused(false); // Libera o scanner ao fechar
+        }}
       >
         <SafeAreaView style={styles.modalContainer}>
           <Text style={styles.modalTitle}>{t('productNotFound')}</Text>
@@ -212,6 +234,7 @@ export default function Vendas() {
             onPress={() => {
               setIsListModalVisible(false);
               setFailedBarcode(null);
+              setIsScannerPaused(false); // Libera o scanner
             }}
             color="#E67E22"
           />
@@ -221,6 +244,7 @@ export default function Vendas() {
   );
 }
 
+// ESTILOS ATUALIZADOS
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
@@ -248,13 +272,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 6,
+    // O card agora precisa ter uma altura definida para o scanner
+    // ou usar 'flex: 1' se o conteúdo principal for ele.
+    // Vamos dar uma altura baseada na proporção 1:1
+    aspectRatio: 1, 
+    minHeight: 300, // Garante altura mínima
   },
-
   apiStatusOffline: {
     backgroundColor: "#fff3cd",
     borderLeftColor: "#ffc107",
     borderLeftWidth: 4,
-    minHeight: 0,
     padding: 10,
     marginBottom: 10,
     width: '100%',
@@ -262,7 +289,6 @@ const styles = StyleSheet.create({
   },
   apiStatusText: {
     color: "#856404",
-    marginTop: 0,
   },
   modalContainer: {
     flex: 1,

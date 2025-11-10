@@ -1,5 +1,6 @@
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useData } from "@/contexts/DataContext"; // <--- 1. IMPORTAR
 import { apiService } from "@/services/api";
 import React, { useState, useEffect } from 'react';
 import {
@@ -17,10 +18,11 @@ import { BarChart, PieChart } from 'react-native-gifted-charts';
 const { width } = Dimensions.get('window');
 
 export default function Relatorios() {
-  const { t } = useLanguage();
+  const { t } = useLanguage(); // Continua usando para traduções
+  const { dataVersion } = useData(); // <--- 2. USAR O HOOK
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
+  
   // Estados dos KPIs
   const [kpiFaturamentoHoje, setKpiFaturamentoHoje] = useState({ faturamento_hoje: 0 });
   const [kpiUnidadesHoje, setKpiUnidadesHoje] = useState({ unidades_vendidas_hoje: 0 });
@@ -28,16 +30,16 @@ export default function Relatorios() {
   const [kpiProximaDevolucao, setKpiProximaDevolucao] = useState({ proxima_data_limite: null });
   const [kpiFaturamento30d, setKpiFaturamento30d] = useState({ faturamento_ultimos_30_dias: 0 });
   const [kpiTicketMedio30d, setKpiTicketMedio30d] = useState({ ticket_medio_ultimos_30_dias: 0 });
+  
   interface Revista {
     nome?: string;
     total_vendido?: number;
   }
-
   interface Pagamento {
     metodo_pagamento?: string;
     faturamento?: number;
   }
-
+  
   const [top5Revistas, setTop5Revistas] = useState<Revista[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
 
@@ -74,7 +76,7 @@ export default function Relatorios() {
       if (Array.isArray(dataTop5) && dataTop5.length > 0) {
         setTop5Revistas(dataTop5);
       }
-
+      
       if (Array.isArray(dataPagamentos) && dataPagamentos.length > 0) {
         setPagamentos(dataPagamentos);
       }
@@ -85,8 +87,9 @@ export default function Relatorios() {
   };
 
   useEffect(() => {
+    setLoading(true); // Mostra o loading a cada refresh
     fetchDados().finally(() => setLoading(false));
-  }, []);
+  }, [dataVersion]); // <--- 3. ADICIONAR dataVersion
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -126,8 +129,8 @@ export default function Relatorios() {
 
   const totalFaturamento = pagamentos.reduce((acc, item) => acc + (item.faturamento || 0), 0);
   const chartPagamentosData = pagamentos.map((item, index) => {
-    const percentual = totalFaturamento > 0
-      ? (((item.faturamento ?? 0) / totalFaturamento) * 100).toFixed(0)
+    const percentual = totalFaturamento > 0 
+      ? (((item.faturamento ?? 0) / totalFaturamento) * 100).toFixed(0) 
       : 0;
     return {
       value: parseFloat(percentual.toString()),
@@ -145,7 +148,7 @@ export default function Relatorios() {
           <ActivityIndicator size="large" color="#E67E22" />
           <Text style={styles.loadingText}>{t('loadingData')}</Text>
         </View>
-        {/* <BottomNav /> FOI REMOVIDO DAQUI */}
+        {/* <BottomNav /> foi removido */}
       </SafeAreaView>
     );
   }
@@ -240,7 +243,7 @@ export default function Relatorios() {
                      // @ts-ignore
                        tooltipStyle.top = 0;
                      // @ts-ignore
-
+                   
                    } else tooltipStyle.bottom = 0;
                    // @ts-ignore
                    if (ultimo == index) tooltipStyle.right = 0;
@@ -277,7 +280,7 @@ export default function Relatorios() {
               <PieChart
                 data={chartPagamentosData}
                 donut
-                innerRadius={90}
+                innerRadius={90}  
                 radius={160}
                 centerLabelComponent={() => (
                   <View style={styles.centerLabel}>
@@ -290,7 +293,7 @@ export default function Relatorios() {
                 textSize={15}
                 fontWeight="bold"
               />
-
+              
               {/* Legenda */}
               <View style={styles.legend}>
                 {pagamentos.map((item, index) => (
@@ -315,7 +318,7 @@ export default function Relatorios() {
         )}
       </ScrollView>
 
-      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
+      {/* <BottomNav /> foi removido */}
     </SafeAreaView>
   );
 }
@@ -330,9 +333,9 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 90, // Mantenha um padding inferior para o scroll
+    paddingBottom: 100, // <-- Padding para o ScrollView
   },
-  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
+  // bottomNavContainer foi removido
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -488,7 +491,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     minWidth: 120,
     maxWidth: width * 0.5,
-    minHeight: 120
+    minHeight: 120 
   },
 
   tooltipContent: {
@@ -498,7 +501,7 @@ const styles = StyleSheet.create({
 
   tooltipLabel: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 14, 
     fontWeight: '700',
   },
 
