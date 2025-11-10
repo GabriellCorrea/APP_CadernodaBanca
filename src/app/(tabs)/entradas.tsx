@@ -77,7 +77,7 @@ export default function Entradas() {
     buscarEntradas();
   }, [buscarEntradas]);
 
-  // --- NOVO: Função interna para processar o upload ---
+  // --- ATUALIZADO: Função interna para processar o upload ---
   const _runUpload = async (upload: PendingUpload) => {
     try {
       // 1. Tenta fazer o upload
@@ -93,19 +93,39 @@ export default function Entradas() {
     } catch (error: any) {
       console.error("❌ Erro no upload da entrada:", error);
 
-      // 4. Falha: Atualiza o status do item para 'error'
-      setPendingEntradas((prev) =>
-        prev.map((p) =>
-          p.tempId === upload.tempId ? { ...p, status: "error" } : p
-        )
-      );
+      // --- NOVO: Tratamento do Erro 409 (Conflict) ---
+      if (error.response?.status === 409) {
+        // 1. Alerta o usuário que o arquivo já existe
+        Alert.alert(
+          "Arquivo Duplicado", // Título
+          `O arquivo "${upload.fileName}" já foi processado anteriormente.` // Mensagem
+        );
 
-      // 5. Alerta o usuário
-      Alert.alert(
-        "Erro no upload",
-        `Não foi possível enviar o arquivo "${upload.fileName
-        }".\n\nDetalhes: ${error.message || "Erro desconhecido"}`
-      );
+        // 2. Remove da lista de pendentes (pois não está mais pendente)
+        setPendingEntradas((prev) =>
+          prev.filter((p) => p.tempId !== upload.tempId)
+        );
+
+        // 3. Atualiza a lista principal para garantir consistência
+        await buscarEntradas();
+
+      } else {
+        // --- Lógica de Erro Padrão (para outros erros) ---
+
+        // 4. Falha: Atualiza o status do item para 'error'
+        setPendingEntradas((prev) =>
+          prev.map((p) =>
+            p.tempId === upload.tempId ? { ...p, status: "error" } : p
+          )
+        );
+
+        // 5. Alerta o usuário
+        Alert.alert(
+          "Erro no upload",
+          `Não foi possível enviar o arquivo "${upload.fileName
+          }".\n\nDetalhes: ${error.message || "Erro desconhecido"}`
+        );
+      }
     }
   };
 
