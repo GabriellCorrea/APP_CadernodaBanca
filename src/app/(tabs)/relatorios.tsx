@@ -1,7 +1,10 @@
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
-import React, { useState, useEffect } from 'react';
+// ATUALIZADO: Importar useCallback
+import React, { useState, useEffect, useCallback } from 'react';
+// ATUALIZADO: Importar useFocusEffect
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -41,9 +44,12 @@ export default function Relatorios() {
   const [top5Revistas, setTop5Revistas] = useState<Revista[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
 
-  // Função para buscar dados da API
-  const fetchDados = async () => {
+  // --- ATUALIZADO AQUI ---
+  // 1. Envolvemos a função em useCallback
+  const fetchDados = useCallback(async () => {
     try {
+      // Definimos o loading aqui para o useFocusEffect
+      setLoading(true);
       const [
         dataFatHoje,
         dataUnidHoje,
@@ -81,12 +87,19 @@ export default function Relatorios() {
 
     } catch (error) {
       console.error('Erro geral ao buscar dados do dashboard:', error);
+    } finally {
+      setLoading(false); // Garantimos que o loading termine
     }
-  };
+  }, []); // Deixamos as dependências vazias, pois t() não é usado aqui.
 
-  useEffect(() => {
-    fetchDados().finally(() => setLoading(false));
-  }, []);
+  // 2. Substituímos useEffect por useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      fetchDados();
+    }, [fetchDados])
+  );
+  // --- FIM DA ATUALIZAÇÃO ---
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -94,6 +107,7 @@ export default function Relatorios() {
     setRefreshing(false);
   };
 
+  // ... (o resto do seu componente permanece igual)
   interface CurrencyFormatter {
     (value: number | null | undefined): string;
   }
@@ -145,7 +159,6 @@ export default function Relatorios() {
           <ActivityIndicator size="large" color="#E67E22" />
           <Text style={styles.loadingText}>{t('loadingData')}</Text>
         </View>
-        {/* <BottomNav /> FOI REMOVIDO DAQUI */}
       </SafeAreaView>
     );
   }
@@ -314,12 +327,11 @@ export default function Relatorios() {
           </View>
         )}
       </ScrollView>
-
-      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
 
+// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -330,9 +342,8 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 90, // Mantenha um padding inferior para o scroll
+    paddingBottom: 90,
   },
-  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

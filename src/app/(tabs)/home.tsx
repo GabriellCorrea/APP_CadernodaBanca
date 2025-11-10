@@ -3,8 +3,10 @@ import { MetaDoDia } from "@/components/MetaDoDia/MetaDoDia";
 import { UltimasVendas } from "@/components/UltimasVendas/UltimasVendas";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react"; // NOVO: Importar useCallback
+// ATUALIZADO: Importar useFocusEffect
+import { useRouter, useFocusEffect } from "expo-router";
+// ATUALIZADO: Importar useCallback
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -18,19 +20,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type VendaRecenteApi = any;
 
-/**
- * Helper para traduzir erros da API em mensagens amigáveis.
- * (Idealmente, isso ficaria em um arquivo de utils, ex: 'utils/errorUtils.js')
- *
- * @param err O objeto de erro (geralmente do Axios)
- * @param t A função de tradução (i18n)
- * @returns Uma string com a mensagem de erro amigável
- */
 const getFriendlyErrorMessage = (err: any, t: (key: string, fallback?: string) => string): string => {
   if (err.code === 'ERR_NETWORK') {
     return t("errorNetwork", "Erro de conexão. Verifique sua internet.");
   }
-
   if (err.response?.status) {
     const status = err.response.status;
     if (status >= 500) {
@@ -43,8 +36,6 @@ const getFriendlyErrorMessage = (err: any, t: (key: string, fallback?: string) =
       return t("errorNotFound", "Não encontramos o que você procurava.");
     }
   }
-
-  // Fallback para a mensagem de erro que você já tinha ou uma genérica
   return err.message || t("saleError", "Ocorreu um erro ao carregar os dados.");
 };
 
@@ -56,7 +47,7 @@ export default function Home() {
   const [faturamento, setFaturamento] = useState<number>(0);
   const [ultimasVendas, setUltimasVendas] = useState<VendaRecenteApi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Estado para o RefreshControl
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
 
@@ -65,12 +56,10 @@ export default function Home() {
     if (!isRefresh) {
       setLoading(true);
     }
-    setError(null); // Limpa erros anteriores a cada nova tentativa
+    setError(null);
 
     try {
       const data = await apiService.relatorios.home();
-
-
 
       if (data) {
         setFaturamento(data.faturamento_do_dia || 0);
@@ -90,34 +79,36 @@ export default function Home() {
 
     } catch (err: any) {
       console.error("Erro ao buscar dados da home:", err);
-      // Usamos o helper para definir uma mensagem amigável
       const friendlyMessage = getFriendlyErrorMessage(err, t);
       setError(friendlyMessage);
       setFaturamento(0);
       setUltimasVendas([]);
     } finally {
-      // Só paramos o loading principal se não for um refresh
       if (!isRefresh) {
         setLoading(false);
       }
     }
-  }, [t]); // A dependência 't' garante que a função seja recriada se o idioma mudar
+  }, [t]);
 
-  // useEffect agora chama a função memoizada (useCallback)
-  useEffect(() => {
-    carregarHomeData(false); // Chama como load inicial
-  }, [carregarHomeData]);
+  // --- ATUALIZADO AQUI ---
+  // Substituímos useEffect por useFocusEffect
+  // Usamos useCallback para evitar que a função seja recriada em cada render
+  useFocusEffect(
+    useCallback(() => {
+      // O 'false' indica que é um carregamento de foco, não um "puxar para atualizar"
+      carregarHomeData(false);
+    }, [carregarHomeData]) // Depende da função memoizada
+  );
+  // --- FIM DA ATUALIZAÇÃO ---
 
-  // Função para lidar com o "puxar para atualizar"
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await carregarHomeData(true); // Chama como refresh
     setRefreshing(false);
   }, [carregarHomeData]);
 
-  //Função para o botão "Tentar Novamente"
   const handleRetry = () => {
-    carregarHomeData(false); // Chama como um load inicial
+    carregarHomeData(false);
   };
 
   return (
@@ -127,23 +118,18 @@ export default function Home() {
       <ScrollView
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollContentContainer}
-        //Adiciona o RefreshControl
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#FF9800"]} // Cor do spinner do refresh
+            colors={["#FF9800"]}
             tintColor={"#FF9800"}
           />
         }
       >
-        {/* Lógica de renderização
-            Mostra um spinner grande se for o load inicial
-        */}
         {loading ? (
           <ActivityIndicator size="large" color="#FF9800" style={styles.loader} />
         ) : error ? (
-          // Se der erro, mostra o container de erro com o botão
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
@@ -151,7 +137,6 @@ export default function Home() {
             </TouchableOpacity>
           </View>
         ) : (
-          // Se tudo der certo, mostra o conteúdo
           <>
             <MetaDoDia faturamentoDoDia={faturamento} />
 
@@ -171,12 +156,11 @@ export default function Home() {
         )}
 
       </ScrollView>
-
-      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
 
+// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -187,10 +171,9 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 16,
-    paddingBottom: 160, // Aumente se necessário para o scroll
-    flexGrow: 1, //Garante que o scroll ocupe espaço mesmo com pouco conteúdo
+    paddingBottom: 160,
+    flexGrow: 1,
   },
-  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
   fixedRegistrarVendaBtn: {
     position: "relative",
     bottom: 0,
@@ -204,8 +187,8 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    marginTop: 20, // Adicionado um espaço
-    marginBottom: 20, // Adicionado um espaço
+    marginTop: 20,
+    marginBottom: 20,
   },
   buttonContent: {
     flexDirection: "row",
@@ -223,14 +206,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginRight: 8,
   },
-  // Estilo de erro antigo
   errorText: {
     color: '#D32F2F',
     textAlign: 'center',
     fontSize: 16,
     marginBottom: 20,
   },
-  // Estilos para o container de erro e botão
   loader: {
     flex: 1,
     justifyContent: 'center',
