@@ -8,7 +8,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  // IMPORTAR Platform e ScrollView para melhorias
+  Platform,
+  ScrollView,
 } from "react-native";
 import { ProdutoEstoque } from "../../app/(tabs)/vendas";
 
@@ -19,6 +22,17 @@ type ConfirmarVendaViewProps = {
   setApiOnline: (status: boolean) => void;
 };
 
+// --- NOVA FUNÇÃO HELPER ---
+// Para formatar a moeda de forma consistente
+const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || isNaN(value)) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+};
+// --- FIM DA NOVA FUNÇÃO ---
+
 export function ConfirmarVendaView({
   produto,
   onCancelar,
@@ -28,18 +42,29 @@ export function ConfirmarVendaView({
   const { t } = useLanguage();
   const { refreshData } = useData(); // <--- ADICIONADO
   const [quantidade, setQuantidade] = useState("1");
-  const [desconto, setDesconto] = useState("0");
+  const [desconto, setDesconto] = useState("0"); // Este estado agora é apenas para o *display*
   const [metodoPagamento, setMetodoPagamento] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // --- LÓGICA DE CÁLCULO ATUALIZADA ---
+  // Obtém o valor numérico limpo do desconto
+  const descontoNum = useMemo(() => {
+    // Substitui vírgula por ponto para o parseFloat
+    const valorLimpo = desconto.replace(",", ".");
+    return parseFloat(valorLimpo) || 0;
+  }, [desconto]);
+  
+  const precoUnitarioNum = useMemo(() => {
+     return parseFloat((produto.preco_capa || 0).toString());
+  }, [produto.preco_capa]);
+
   const valorTotal = useMemo(() => {
-    const preco = parseFloat(
-      (produto.preco_capa || produto.preco_capa || 0).toString()
-    );
     const qtd = parseInt(quantidade) || 0;
-    const desc = parseFloat(desconto.replace(",", ".")) || 0;
-    return Math.max(0, preco * qtd - desc);
-  }, [produto, quantidade, desconto]);
+    // Usar os valores numéricos já calculados
+    return Math.max(0, precoUnitarioNum * qtd - descontoNum);
+  }, [precoUnitarioNum, quantidade, descontoNum]);
+  // --- FIM DA LÓGICA DE CÁLCULO ---
+
 
   const handleConfirmarVenda = async () => {
     if (!metodoPagamento) {
@@ -51,8 +76,9 @@ export function ConfirmarVendaView({
       Alert.alert(t("error"), "Quantidade deve ser um número maior que zero.");
       return;
     }
-    const descNum = parseFloat(desconto.replace(",", ".")) || 0;
-    if (isNaN(descNum) || descNum < 0) {
+    
+    // Usar o valor numérico já limpo
+    if (isNaN(descontoNum) || descontoNum < 0) {
       Alert.alert(t("error"), "Desconto inválido. Use 0 se não houver desconto.");
       return;
     }
@@ -70,7 +96,7 @@ export function ConfirmarVendaView({
       id_revista: produto.id_revista,
       metodo_pagamento: metodoPagamento,
       qtd_vendida: qtdNum,
-      desconto_aplicado: descNum,
+      desconto_aplicado: descontoNum, // Envia o número limpo
       valor_total: valorTotal,
       data_venda: new Date().toISOString(),
     };
@@ -115,18 +141,53 @@ export function ConfirmarVendaView({
     }
   };
 
-  const precoUnitario = parseFloat(
-    (produto.preco_capa || 0).toString()
-  ).toFixed(2);
+
+  // --- ATUALIZAÇÃO DE INPUT DE DESCONTO ---
+  const handleDescontoChange = (text: string) => {
+    // 1. Remove qualquer coisa que não seja número, vírgula ou ponto
+    let valorFiltrado = text.replace(/[^0-9,.]/g, '');
+
+    // 2. Impede múltiplos separadores (vírgula ou ponto)
+    const separadores = valorFiltrado.match(/[.,]/g) || [];
+    
+    // --- INÍCIO DA CORREÇÃO ---
+    // Pegamos o primeiro separador fora do 'if'
+    const primeiroSeparador = separadores[0]; // Isso é 'string | undefined'
+
+    // Verificamos o 'length' E se o 'primeiroSeparador' realmente existe
+    if (separadores.length > 1 && primeiroSeparador) {
+      // Agora o TypeScript sabe que 'primeiroSeparador' é uma 'string'
+      const primeiroSeparadorIndex = valorFiltrado.indexOf(primeiroSeparador);
+      const inicio = valorFiltrado.substring(0, primeiroSeparadorIndex + 1);
+      const fim = valorFiltrado.substring(primeiroSeparadorIndex + 1).replace(/[.,]/g, '');
+      valorFiltrado = inicio + fim;
+    }
+    // --- FIM DA CORREÇÃO ---
+    
+    // 3. Se começar com , ou . adiciona um 0 antes
+    if (valorFiltrado.startsWith(',') || valorFiltrado.startsWith('.')) {
+      valorFiltrado = '0' + valorFiltrado;
+    }
+
+    setDesconto(valorFiltrado);
+  };
+  // --- FIM DA ATUALIZAÇÃO ---
+
 
   return (
-    <View style={styles.confirmationContainer}>
+    // Adicionado ScrollView para garantir que funcione em telas pequenas
+    <ScrollView 
+      style={styles.confirmationContainer} 
+      contentContainerStyle={{ paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.confirmTitle}>{t("confirmSale")}</Text>
 
       <View style={styles.produtoInfo}>
         <Text style={styles.produtoNome}>{produto.nome}</Text>
         <Text style={styles.produtoPreco}>
-          Preço Unitário: R$ {precoUnitario}
+          {/* Usando o formatador de moeda */}
+          Preço Unitário: {formatCurrency(precoUnitarioNum)}
         </Text>
         {produto.codigo_barras && (
           <Text style={styles.codigoBarras}>{t('code')}: {produto.codigo_barras}</Text>
@@ -149,7 +210,9 @@ export function ConfirmarVendaView({
           <TextInput
             style={styles.input}
             value={desconto}
-            onChangeText={setDesconto}
+            // --- ATUALIZADO AQUI ---
+            onChangeText={handleDescontoChange}
+            // --- FIM DA ATUALIZAÇÃO ---
             keyboardType="decimal-pad"
             selectTextOnFocus
           />
@@ -210,7 +273,10 @@ export function ConfirmarVendaView({
 
       <View style={styles.totalContainer}>
         <Text style={styles.totalLabel}>Valor Total:</Text>
-        <Text style={styles.totalValor}>R$ {valorTotal.toFixed(2)}</Text>
+        <Text style={styles.totalValor}>
+          {/* Usando o formatador de moeda */}
+          {formatCurrency(valorTotal)}
+        </Text>
       </View>
 
       <View style={[styles.botoesContainer, { marginTop: 20 }]}>
@@ -236,14 +302,14 @@ export function ConfirmarVendaView({
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView> // Fechamento do ScrollView
   );
 }
 
 // Estilos específicos do ConfirmarVendaView
 const styles = StyleSheet.create({
   confirmationContainer: {
-    flex: 1,
+    flex: 1, // Garante que o scrollview tente ocupar espaço
     width: '100%',
     padding: 4,
   },

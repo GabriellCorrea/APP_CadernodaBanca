@@ -177,7 +177,17 @@ export default function Vendas() {
       >
         <ScrollView contentContainerStyle={styles.scrollContentContainer}>
           <View style={styles.container}>
-            <View style={styles.card}>
+            {/* MUDANÇA AQUI: 
+              O estilo do card agora é dinâmico. 
+              - styles.card (base)
+              - styles.scannerCard (só se aplica se !produtoSelecionado)
+            */}
+            <View 
+              style={[
+                styles.card, 
+                !produtoSelecionado ? styles.scannerCard : styles.confirmCard
+              ]}
+            >
               {!apiOnline && (
                 <View style={styles.apiStatusOffline}>
                   <Text style={styles.apiStatusText}>
@@ -189,12 +199,10 @@ export default function Vendas() {
               {/* LÓGICA DE RENDERIZAÇÃO ATUALIZADA */}
               {!produtoSelecionado ? (
                 // TELA 1: SCANNER
-                // O ScannerView agora ocupa o espaço e gerencia sua própria UI
                 <ScannerView
                   onScanSuccess={handleProdutoSelecionado}
                   onScanFail={handleScanFailed}
                   apiOnline={apiOnline}
-                  // Pausa o scanner se o modal estiver visível OU se estivermos pausados
                   isPaused={isListModalVisible || isScannerPaused} 
                 />
               ) : (
@@ -255,7 +263,7 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'center', // Centraliza o card verticalmente
   },
   container: {
     justifyContent: "flex-start",
@@ -272,11 +280,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 6,
-    // O card agora precisa ter uma altura definida para o scanner
-    // ou usar 'flex: 1' se o conteúdo principal for ele.
-    // Vamos dar uma altura baseada na proporção 1:1
-    aspectRatio: 1, 
-    minHeight: 300, // Garante altura mínima
+    // REMOVIDO: aspectRatio: 1, 
+    // REMOVIDO: minHeight: 300, 
+  },
+  // NOVO ESTILO: Aplicado quando o scanner está ativo
+  scannerCard: {
+    aspectRatio: 1,
+    minHeight: 300,
+  },
+  // NOVO ESTILO: Aplicado quando a confirmação está ativa
+  confirmCard: {
+    // Não precisa de nada, ele vai crescer com o conteúdo
   },
   apiStatusOffline: {
     backgroundColor: "#fff3cd",
