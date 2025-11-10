@@ -255,7 +255,7 @@ export default function Relatorios() {
                    
                    } else tooltipStyle.bottom = 0;
                    // @ts-ignore
-                   if (ultimo == index) tooltipStyle.right = 0;
+                   if (ultimo == index && index != 0) tooltipStyle.right = 0;
 
                     return (
                         // @ts-ignore

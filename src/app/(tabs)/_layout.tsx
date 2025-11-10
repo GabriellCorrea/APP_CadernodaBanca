@@ -1,11 +1,10 @@
-import React from 'react'; // <-- IMPORTAR REACT
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Helper para os ícones
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof MaterialCommunityIcons>['name']; // <-- TIPO CORRIGIDO
+  name: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   color: string;
 }) {
   return <MaterialCommunityIcons size={28} style={{ marginBottom: -3 }} {...props} />;
@@ -13,6 +12,7 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -22,8 +22,8 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#FFFFFF',
         tabBarStyle: {
           backgroundColor: '#4E5356',
-          height: 70,
-          paddingBottom: 10,
+          height: 70 + insets.bottom, // esse insets adiciona um espaço extra embaixo para dispositivos com "notch"
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
           paddingTop: 5,
           borderTopWidth: 0,
         },
@@ -68,7 +68,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Telas ocultas da barra de abas */}
+      {/* Telas ocultas */}
       <Tabs.Screen name="entradas" options={{ href: null }} />
       <Tabs.Screen name="entradas/[id]" options={{ href: null }} />
       <Tabs.Screen name="devolucoes" options={{ href: null }} />
