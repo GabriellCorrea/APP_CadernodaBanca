@@ -23,7 +23,6 @@ const getFriendlyErrorMessage = (err: any, t: (key: string, fallback?: string) =
   if (err.code === 'ERR_NETWORK') {
     return t("errorNetwork", "Erro de conexão. Verifique sua internet.");
   }
-
   if (err.response?.status) {
     const status = err.response.status;
     if (status >= 500) {
@@ -49,6 +48,7 @@ export default function Home() {
   const [faturamento, setFaturamento] = useState<number>(0);
   const [ultimasVendas, setUltimasVendas] = useState<VendaRecenteApi[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,6 +105,7 @@ export default function Home() {
 
   const handleRetry = () => {
     carregarHomeData(false);
+    carregarHomeData(false);
   };
 
   return (
@@ -158,6 +159,7 @@ export default function Home() {
   );
 }
 
+// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,

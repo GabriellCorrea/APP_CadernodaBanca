@@ -2,7 +2,10 @@ import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useData } from "@/contexts/DataContext"; // <--- 1. IMPORTAR
 import { apiService } from "@/services/api";
-import React, { useState, useEffect } from 'react';
+// ATUALIZADO: Importar useCallback
+import React, { useState, useEffect, useCallback } from 'react';
+// ATUALIZADO: Importar useFocusEffect
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -43,9 +46,12 @@ export default function Relatorios() {
   const [top5Revistas, setTop5Revistas] = useState<Revista[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
 
-  // Função para buscar dados da API
-  const fetchDados = async () => {
+  // --- ATUALIZADO AQUI ---
+  // 1. Envolvemos a função em useCallback
+  const fetchDados = useCallback(async () => {
     try {
+      // Definimos o loading aqui para o useFocusEffect
+      setLoading(true);
       const [
         dataFatHoje,
         dataUnidHoje,
@@ -83,8 +89,10 @@ export default function Relatorios() {
 
     } catch (error) {
       console.error('Erro geral ao buscar dados do dashboard:', error);
+    } finally {
+      setLoading(false); // Garantimos que o loading termine
     }
-  };
+  }, []); // Deixamos as dependências vazias, pois t() não é usado aqui.
 
   useEffect(() => {
     setLoading(true); // Mostra o loading a cada refresh
@@ -97,6 +105,7 @@ export default function Relatorios() {
     setRefreshing(false);
   };
 
+  // ... (o resto do seu componente permanece igual)
   interface CurrencyFormatter {
     (value: number | null | undefined): string;
   }
@@ -323,6 +332,7 @@ export default function Relatorios() {
   );
 }
 
+// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
