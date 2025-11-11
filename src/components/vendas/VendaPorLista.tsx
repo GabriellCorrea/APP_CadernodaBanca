@@ -85,7 +85,7 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
   };
 
   return (
-    <ScrollView style={styles.listaContainer}>
+    <View style={styles.container}>
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
@@ -96,29 +96,32 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
           onChangeText={setBusca}
         />
       </View>
-      {loadingProdutos ? (
-        <ActivityIndicator
-          size="large"
-          color="#E67E22"
-          style={{ marginTop: 20 }}
-        />
-      ) : (
-        <View style={{ paddingBottom: 100 }}>
-          {produtosFiltrados.length === 0 ? (
-            <Text style={styles.listaVaziaText}>{t("noMagazineFound")}</Text>
-          ) : (
-            produtosFiltrados.map(renderProdutoItem)
-          )}
-        </View>
-      )}
-    </ScrollView>
+      
+      <ScrollView style={styles.listaContainer}>
+        {loadingProdutos ? (
+          <ActivityIndicator
+            size="large"
+            color="#E67E22"
+            style={{ marginTop: 40 }}
+          />
+        ) : (
+          <View style={{ paddingBottom: 100 }}>
+            {produtosFiltrados.length === 0 ? (
+              <Text style={styles.listaVaziaText}>{t("noMagazineFound")}</Text>
+            ) : (
+              produtosFiltrados.map(renderProdutoItem)
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  listaContainer: {
-    width: "100%",
+  container: {
     flex: 1,
+    width: "100%",
   },
   searchContainer: {
     flexDirection: "row",
@@ -129,7 +132,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 12,
     marginBottom: 12,
-    height: 48,
+    width: '100%',
+    height: 48
   },
   searchIcon: {
     marginRight: 8,
@@ -138,6 +142,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#434343",
     fontSize: 16,
+  },
+  listaContainer: {
+    flex: 1,
   },
   itemLista: {
     flexDirection: "row",
