@@ -58,8 +58,10 @@ export default function Devolucoes() {
       setLoadingList(true);
       setErrorList(null);
       const devolucoes = await apiService.devolucoes.listarPorUsuario();
-      const abertas = devolucoes.filter((d: Devolucao) => d.status === 'aberta');
-      setDevolucoesAbertas(abertas);
+      if (devolucoes.length != 0) {
+        const abertas = devolucoes.filter((d: Devolucao) => d.status === 'aberta');
+        setDevolucoesAbertas(abertas);
+      }
     } catch (error) {
       console.error('❌ Erro ao buscar devoluções:', error);
       setErrorList('Erro ao buscar devoluções. Tente novamente.');
@@ -181,9 +183,9 @@ export default function Devolucoes() {
     <View key={item.tempId} style={[styles.itemContainer, styles.pendingItem]}>
       {/* Mostra o ícone de status */}
       {item.status === 'pending' ? (
-        <ActivityIndicator size="small" color="#E67E22" style={{marginRight: 12}} />
+        <ActivityIndicator size="small" color="#E67E22" style={{ marginRight: 12 }} />
       ) : (
-        <Ionicons name="warning-outline" size={24} color="#E74C3C" style={{marginRight: 12}} />
+        <Ionicons name="warning-outline" size={24} color="#E74C3C" style={{ marginRight: 12 }} />
       )}
       <View style={styles.itemInfo}>
         <Text style={styles.itemTitle} numberOfLines={2}>{item.fileName}</Text>
@@ -208,7 +210,7 @@ export default function Devolucoes() {
       style={styles.itemContainer}
       onPress={() => router.push(`/devolucoes/${item.id_chamada_devolucao}`)}
     >
-      <Ionicons name="document-text-outline" size={32} color="#E67E22" style={{marginRight: 12}} />
+      <Ionicons name="document-text-outline" size={32} color="#E67E22" style={{ marginRight: 12 }} />
       <View style={styles.itemInfo}>
         <Text style={styles.itemTitle}>{t('return')} #{item.id_chamada_devolucao}</Text>
         <Text style={styles.itemDate}>
@@ -263,7 +265,7 @@ export default function Devolucoes() {
 
         {/* Lista de devoluções reais */}
         {loadingList ? (
-          <ActivityIndicator size="large" color="#E67E22" style={{marginTop: 20}} />
+          <ActivityIndicator size="large" color="#E67E22" style={{ marginTop: 20 }} />
         ) : errorList ? (
           <Text style={styles.errorText}>{errorList}</Text>
         ) : (
