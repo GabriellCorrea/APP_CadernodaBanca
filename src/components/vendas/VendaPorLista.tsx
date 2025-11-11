@@ -50,11 +50,13 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
 
 
   const renderProdutoItem = (item: ProdutoEstoque) => {
+    
     if (item.url_revista && typeof item.url_revista === 'string') {
       const separator = item.url_revista.includes('?') ? '&' : '?';
       const cacheBustedUrl = `${item.url_revista}${separator}timestamp=${new Date().getTime()}`;
       item = { ...item, imagem: { uri: cacheBustedUrl } };
     }
+    if (!item.codigo_barras && item.qtd_estoque > 0) {
     return (
       <TouchableOpacity
         key={item.id_revista.toString()}
@@ -78,7 +80,8 @@ export function VendaPorLista({ onProdutoSelecionado }: VendaPorListaProps) {
         </View>
         <Ionicons name="add-circle" size={32} color="#E67E22" />
       </TouchableOpacity>
-    )
+      )
+    } else return null;
   };
 
   return (

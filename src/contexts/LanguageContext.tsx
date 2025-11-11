@@ -94,6 +94,7 @@ const translations = {
     saleError: 'Não foi possível confirmar a venda',
     savingCode: 'Salvando código...',
     selectProduct: 'Selecione o produto na lista',
+    loadingLastSales: 'Carregando últimas vendas...',
 
     // Gestão
     delivery: 'Entrega',
@@ -290,6 +291,7 @@ const translations = {
     saleError: 'Non è stato possibile confermare la vendita',
     savingCode: 'Salvataggio codice...',
     selectProduct: 'Seleziona il prodotto dalla lista',
+    loadingLastSales: 'Caricamento ultime vendite...',
 
     // Gestão
     delivery: 'Consegna',
@@ -486,6 +488,7 @@ const translations = {
     saleError: 'Could not confirm the sale',
     savingCode: 'Saving code...',
     selectProduct: 'Select the product from the list',
+    loadingLastSales: 'Loading last sales...',
 
     // Gestão
     delivery: 'Delivery',

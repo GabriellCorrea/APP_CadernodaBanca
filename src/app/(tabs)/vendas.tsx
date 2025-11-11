@@ -26,6 +26,7 @@ export type ProdutoEstoque = {
   nome: string;
   url_revista: string;
   preco_capa: number;
+  qtd_estoque: number;
   imagem: any;
   codigo_barras?: string;
   numero_edicao?: number;

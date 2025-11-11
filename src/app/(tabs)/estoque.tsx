@@ -5,12 +5,13 @@ import { apiService } from "@/services/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker"; // Importado
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ActivityIndicator, // Importado
   Alert, // Importado
   Button,
   KeyboardAvoidingView,
+  RefreshControl, // Importado
   Modal, // Importado
   Platform,
   ScrollView,
@@ -25,10 +26,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Estoque() {
   const { t } = useLanguage();
-  const [filtro, setFiltro] = useState("Todos");
+  const [filtro, setFiltro] = useState("Em estoque");
   const [busca, setBusca] = useState("");
   const [produtos, setProdutos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // --- Novos Estados para o Modal ---
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -40,7 +42,7 @@ export default function Estoque() {
   const [permissao, requisitarPermissao] = useCameraPermissions();
   // --- Fim Novos Estados ---
 
-  const filtros = ["Todos", "À mostra", "Em estoque"];
+  const filtros = ["Em estoque", "Todos", "À mostra"];
 
 
 
@@ -63,6 +65,12 @@ export default function Estoque() {
   useEffect(() => {
     carregarRevistas();
   }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await carregarRevistas(); 
+    setRefreshing(false);
+  }, [carregarRevistas]);
 
   async function carregarRevistas() {
     try {
@@ -344,6 +352,14 @@ export default function Estoque() {
         {/* Lista de produtos */}
         <ScrollView
           style={{ flex: 1 }}
+          refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={onRefresh}
+                      colors={["#FF9800"]} 
+                      tintColor={"#FF9800"}
+                    />
+                  }
           contentContainerStyle={styles.produtos}
           showsVerticalScrollIndicator={false}
         >
