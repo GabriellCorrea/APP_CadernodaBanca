@@ -4,6 +4,7 @@ import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { useData } from "@/contexts/DataContext"; // <--- ADICIONADO
 import {
   ActivityIndicator,
   Alert,
@@ -42,14 +43,18 @@ export default function DetalheDevolucao() {
   const [loading, setLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const {dataVersion} = useData();
 
   useEffect(() => {
+    
     if (!id || typeof id !== 'string') {
       setError("ID da devolução inválido.");
       setLoading(false);
       return;
+    
     }
-
+    
+  
     const carregarDetalhes = async () => {
       try {
         setLoading(true);
@@ -66,7 +71,8 @@ export default function DetalheDevolucao() {
     };
 
     carregarDetalhes();
-  }, [id]);
+    
+  }, [id, dataVersion]); // Recarrega quando dataVersion mudar  
 
   const handleConfirmar = async () => {
     if (isConfirming || !id || typeof id !== 'string') return;
