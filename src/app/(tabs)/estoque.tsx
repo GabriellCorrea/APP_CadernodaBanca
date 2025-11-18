@@ -5,15 +5,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import * as ImagePicker from "expo-image-picker"; // Importado
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState, useCallback } from "react";
 import {
-  ActivityIndicator, // Importado
-  Alert, // Importado
+  ActivityIndicator,
+  Alert,
   Button,
   KeyboardAvoidingView,
-  RefreshControl, // Importado
-  Modal, // Importado
+  RefreshControl,
+  Modal, 
   Platform,
   ScrollView,
   StyleSheet,
@@ -21,6 +21,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -105,7 +106,7 @@ export default function Estoque() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await carregarRevistas(); 
+    await carregarRevistas();
     setRefreshing(false);
   }, [carregarRevistas]);
 
@@ -368,7 +369,7 @@ export default function Estoque() {
                     <RefreshControl
                       refreshing={refreshing}
                       onRefresh={onRefresh}
-                      colors={["#FF9800"]} 
+                      colors={["#FF9800"]}
                       tintColor={"#FF9800"}
                     />
                   }
@@ -430,6 +431,20 @@ export default function Estoque() {
                 <Text style={modalStyles.modalSubtitle}>
                   {t('edition')}: {produtoSelecionado.numero_edicao || "N/A"}
                 </Text>
+
+                {produtoSelecionado.imagem && (
+                  <Image
+                    source={produtoSelecionado.imagem}
+                    style={{
+                      width: 120,
+                      height: 160,
+                      resizeMode: "cover",
+                      borderRadius: 8,
+                      marginBottom: 15,
+                      alignSelf: "center"
+                    }}
+                  />
+                )}
 
                 {/* Ação: Adicionar Foto */}
                 {!produtoSelecionado.imagem && (
