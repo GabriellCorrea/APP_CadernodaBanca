@@ -1,4 +1,5 @@
 import { Header } from "@/components/header";
+import { useData } from "@/contexts/DataContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,6 +39,7 @@ export default function Devolucoes() {
   const router = useRouter();
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const { refreshData } = useData(); // <--- ADICIONADO
 
   // --- Estados removidos ---
   // const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -89,6 +91,7 @@ export default function Devolucoes() {
       // 3. Atualiza a lista principal
       await buscarDevolucoes();
 
+      refreshData();
     } catch (error: any) {
       console.error('❌ Erro no upload da devolução:', error);
 

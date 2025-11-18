@@ -1,4 +1,5 @@
 import { Header } from "@/components/header";
+import { useData } from "@/contexts/DataContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,6 +40,7 @@ export default function Entradas() {
   const router = useRouter(); // Inicializar o router
   const [arquivoSelecionado, setArquivoSelecionado] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const { refreshData } = useData(); // <--- ADICIONADO
 
   // --- NOVO: Estado para uploads pendentes ---
   const [pendingEntradas, setPendingEntradas] = useState<PendingUpload[]>([]);
@@ -90,6 +92,8 @@ export default function Entradas() {
 
       // 3. Atualiza a lista principal
       await buscarEntradas();
+
+      refreshData();
     } catch (error: any) {
       console.error("❌ Erro no upload da entrada:", error);
 

@@ -1,5 +1,6 @@
 import { CardRevista } from "@/components/card_revista";
 import { Header } from "@/components/header";
+import { useData } from "@/contexts/DataContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiService } from "@/services/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Estoque() {
   const { t } = useLanguage();
+  const { dataVersion } = useData(); // <--- ADICIONADO
   const [filtro, setFiltro] = useState("Em estoque");
   const [busca, setBusca] = useState("");
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -60,19 +62,8 @@ export default function Estoque() {
     }
   };
 
-
-
-  useEffect(() => {
-    carregarRevistas();
-  }, []);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await carregarRevistas(); 
-    setRefreshing(false);
-  }, [carregarRevistas]);
-
-  async function carregarRevistas() {
+  const carregarRevistas = useCallback(async (isRefresh = false) => {
+  // async function carregarRevistas() {
     try {
       setLoading(true);
       // 1. Alterado para o novo endpoint da api.ts
@@ -96,7 +87,28 @@ export default function Estoque() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [])
+
+
+  useEffect(() => {
+    carregarRevistas();
+  }, []);
+
+  // useEffect agora "ouve" o dataVersion
+  useEffect(() => {
+    carregarRevistas();
+  }, [dataVersion]); // <--- ATUALIZADO
+
+  useEffect(() => {
+    setBusca("");
+  }, [filtro]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await carregarRevistas(); 
+    setRefreshing(false);
+  }, [carregarRevistas]);
+
 
   const getFilterLabel = (filter: string) => {
     switch (filter) {
@@ -615,8 +627,9 @@ const styles = StyleSheet.create({
   produtos: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingBottom: 120, // Ajuste este padding se necessário
+    gap: 20,
   },
   // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
 });
