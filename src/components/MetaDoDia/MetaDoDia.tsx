@@ -1,5 +1,4 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { buscarMetaDiaria, buscarVendasDoDia } from "@/services/api";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as React from "react";
@@ -7,58 +6,56 @@ import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { styles } from "./styles";
 
-type Venda = {
-  id: number;
-  valor: number;
+// 1. Define a prop para receber o faturamento
+type MetaProps = {
+  faturamentoDoDia: number;
 };
 
-export const MetaDoDia: React.FC = () => {
+export const MetaDoDia: React.FC<MetaProps> = ({ faturamentoDoDia }) => {
   const { t } = useLanguage();
-  const [metaDiaria, setMetaDiaria] = useState<number>(600);
-  const [vendasDoDia, setVendasDoDia] = useState<Venda[]>([]);
-  const [valorAtual, setValorAtual] = useState(0);
+  const [metaDiaria, setMetaDiaria] = useState<number>(600); // Meta continua sendo gerenciada aqui
+  // Removido: const [vendasDoDia, setVendasDoDia] = useState<Venda[]>([]);
+  const [valorAtual, setValorAtual] = useState(0); // Será atualizado pela prop
   const [progresso, setProgresso] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Loading apenas para a meta (AsyncStorage)
   const [editMode, setEditMode] = useState(false);
   const [inputMeta, setInputMeta] = useState(metaDiaria.toString());
 
+  // 2. Simplifica o useEffect para carregar apenas a META do AsyncStorage
   useEffect(() => {
-    const carregarDados = async () => {
+    const carregarMeta = async () => {
       try {
-        const [meta, vendas] = await Promise.all([
-          buscarMetaDiaria(),
-          buscarVendasDoDia()
-        ]);
+        setIsLoading(true);
         // Tenta buscar meta do AsyncStorage
         const metaStorage = await AsyncStorage.getItem('metaDiaria');
         if (metaStorage) {
           setMetaDiaria(Number(metaStorage));
           setInputMeta(metaStorage);
         } else {
-          setMetaDiaria(meta);
-          setInputMeta(meta.toString());
+          setMetaDiaria(600); // Valor padrão
+          setInputMeta('600');
         }
-        setVendasDoDia(vendas);
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar meta:', error);
+        setMetaDiaria(600); // valor padrão
+        setInputMeta('600');
       } finally {
         setIsLoading(false);
       }
     };
-    carregarDados();
+    carregarMeta();
 
-    // Atualizar dados a cada 5 minutos
-    const interval = setInterval(carregarDados, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Removida a atualização periódica, pois os dados vêm da tela Home
   }, []);
 
+  // 3. Atualiza o progresso baseado na PROP 'faturamentoDoDia'
   useEffect(() => {
-    const totalVendas = vendasDoDia.reduce((total, venda) => total + venda.valor, 0);
+    const totalVendas = faturamentoDoDia || 0; // Usa a prop recebida
     const porcentagemProgresso = (totalVendas / metaDiaria) * 100;
-    
+
     setValorAtual(totalVendas);
     setProgresso(Math.min(porcentagemProgresso, 100)); // Limita o progresso a 100%
-  }, [vendasDoDia, metaDiaria]);
+  }, [faturamentoDoDia, metaDiaria]); // Reage à mudança da prop e da meta
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', {
@@ -91,6 +88,7 @@ export const MetaDoDia: React.FC = () => {
         <Text style={styles.goalValue}>{formatCurrency(metaDiaria)}</Text>
       </View>
 
+      {/* O modal de edição da META continua funcionando igual */}
       {editMode && (
         <View style={styles.editModal}>
           <Text style={styles.editModalTitle}>{t('editDailyGoal')}:</Text>

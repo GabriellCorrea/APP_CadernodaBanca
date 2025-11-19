@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: "meuApp",
-    slug: "meuApp",
+    name: "Papel Digital",
+    slug: "papel-digital",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/CADERNO-Photoroom.png",
@@ -18,6 +18,7 @@ export default {
       }
     },
     android: {
+      package: "com.papeldigital.app",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE"
       },

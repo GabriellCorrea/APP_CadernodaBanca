@@ -1,4 +1,3 @@
-import { BottomNav } from "@/components/barra_navegacao";
 import { Header } from "@/components/header";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "expo-router";
@@ -15,40 +14,28 @@ export default function Gestao() {
       <Header usuario="Andrea" pagina={t("management")} />
 
       <View style={styles.buttonsContainer}>
-        {/* Registrar Entrega */}
+        {/* Registrar Entrada */}
         <TouchableOpacity
-          style={styles.gestaoButton}
-          onPress={() => router.push("/chamadas")}
+          style={[styles.gestaoButton, styles.entradaButton]}
+          onPress={() => router.push("/entradas")}
           activeOpacity={0.85}
         >
-          <Icon name="plus" size={50} color="#fff" style={styles.icon} />
-          <Text style={styles.buttonText}>Registrar Entrega</Text>
+          <Icon name="package-down" size={50} color="#fff" style={styles.icon} />
+          <Text style={styles.buttonText}>{t("delivery")}</Text>
         </TouchableOpacity>
 
-        {/* Registrar Devolução */}
+        {/* Acompanhar Devoluções */}
         <TouchableOpacity
-          style={styles.gestaoButton}
-          onPress={() => router.push("/devolucao")}
+          style={[styles.gestaoButton, styles.devolucaoButton]}
+          onPress={() => router.push("/devolucoes")}
           activeOpacity={0.85}
         >
-          <Icon name="cart-arrow-up" size={50} color="#fff" style={styles.icon} />
-          <Text style={styles.buttonText}>{t("registerReturnButton")}</Text>
-        </TouchableOpacity>
-
-        {/* Histórico de Gestão */}
-        <TouchableOpacity
-          style={styles.gestaoButton}
-          onPress={() => router.push("/historico_gestao")}
-          activeOpacity={0.85}
-        >
-          <Icon name="clock-outline" size={50} color="#fff" style={styles.icon} />
-          <Text style={styles.buttonText}>Histórico de Gestão</Text>
+          <Icon name="package-up" size={50} color="#fff" style={styles.icon} />
+          <Text style={styles.buttonText}>{t("return")}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomNavContainer}>
-        <BottomNav />
-      </View>
+      {/* <BottomNav /> FOI REMOVIDO DAQUI */}
     </SafeAreaView>
   );
 }
@@ -64,13 +51,12 @@ const styles = StyleSheet.create({
     justifyContent: "center", // centraliza o grupo de botões
     alignItems: "center",
     paddingHorizontal: 20,
-    gap: 15,
+    gap: 20, // Aumenta o espaço entre os botões
   },
   gestaoButton: {
-    backgroundColor: "#FF9800",
     borderRadius: 15,
     width: "100%",
-    height: "22%",
+    height: "30%", // Botões maiores
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -79,21 +65,21 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
+  // Cores diferentes para os botões
+  entradaButton: {
+    backgroundColor: "#27AE60", // Verde
+  },
+  devolucaoButton: {
+    backgroundColor: "#E67E22", // Laranja (original)
+  },
   icon: {
     marginBottom: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 24, // Fonte maior
     fontWeight: "bold",
     textAlign: "center",
   },
-  bottomNavContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+  // bottomNavContainer: { ... } FOI REMOVIDO DAQUI
 });
-
-

@@ -23,9 +23,14 @@ export const styles = StyleSheet.create({
   },
   titulo: {
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 14,
     color: "#1E2A38",
     marginBottom: 3,
+  },
+  edicao: {
+    fontSize: 11,
+    color: "#666",
+    marginBottom: 4,
   },
   preco: {
     color: "#E15610",
@@ -35,7 +40,7 @@ export const styles = StyleSheet.create({
   },
   textoCinza: {
     color: "#666",
-    fontSize: 10,
+    fontSize: 12,
   },
 });
 
