@@ -2,6 +2,12 @@ import 'dotenv/config';
 
 export default {
   expo: {
+    extra: {
+      eas: {
+        projectId: "99c84295-a637-4dde-8ad5-eb00068bba9b"
+      },
+      API_URL: process.env.API_URL
+    },
     name: "Papel Digital",
     slug: "papel-digital",
     version: "1.0.0",
@@ -60,9 +66,6 @@ export default {
       typedRoutes: true,
       reactCompiler: true
     },
-    extra: {
-      API_URL: process.env.API_URL
-    }
   }
 };
 
