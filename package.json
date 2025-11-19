@@ -19,7 +19,6 @@
     "@supabase/supabase-js": "^2.74.0",
     "axios": "^1.12.2",
     "expo": "54.0.23",
-    "expo-barcode-scanner": "^13.0.1",
     "expo-camera": "~17.0.9",
     "expo-constants": "~18.0.9",
     "expo-document-picker": "~14.0.7",
